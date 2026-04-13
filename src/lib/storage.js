@@ -1,6 +1,12 @@
 const get = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d } catch { return d } }
 const set = (k, v) => localStorage.setItem(k, JSON.stringify(v))
 
+const SESSION_KEY = 'll-session'
+export const saveSession  = (data) => set(SESSION_KEY, data)
+export const loadSession  = ()     => get(SESSION_KEY, null)
+export const hasSession   = ()     => !!localStorage.getItem(SESSION_KEY)
+export const clearSession = ()     => localStorage.removeItem(SESSION_KEY)
+
 export const DEFAULT_BRAND = {
   authorName: 'Norman Driggers',
   name: 'RUFIO',

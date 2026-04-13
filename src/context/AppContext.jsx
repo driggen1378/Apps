@@ -1,5 +1,5 @@
 import { createContext, useContext, useReducer, useEffect, useCallback } from 'react';
-import { saveSession, loadSession, clearSession } from '../lib/storage';
+import { saveSession, loadSession, clearSession, storage } from '../lib/storage';
 import { countWords } from '../lib/anthropic';
 
 const AppContext = createContext(null);
@@ -48,10 +48,12 @@ Bullet lessons without a story attached. Abstract openers. Telling the reader/li
 SIGNATURE CLOSE — Newsletter: "Thank you for everything you do" → Fights On, RUFIO
 SIGNATURE CLOSE — Podcast: personal send-off specific to the day/moment → See you.`;
 
+// Uses storage field names so BrandSettings and AppContext stay in sync
 const DEFAULT_BRAND = {
-  name: 'Norman "RUFIO" Driggers Jr',
-  newsletter: 'Lessons Learned',
-  podcast: 'Your Finest Hour',
+  authorName: 'Norman Driggers',
+  name: 'RUFIO',
+  newsletterName: 'Lessons Learned',
+  podcastName: 'Your Finest Hour',
   tagline: 'Helping people find better ways to think about the lives they\'re building and the people they influence.',
   pillars: [
     'Leadership and autonomy',
@@ -61,8 +63,8 @@ const DEFAULT_BRAND = {
     'Self-development without the self-help cheese',
   ],
   audience: 'Thoughtful, growth-minded adults who take work and life seriously but do not want to become rigid, performative, or derivative. Overloaded with advice, skeptical of extremes, tired of borrowed beliefs. Many are veterans or high-performers navigating transitions.',
-  standFor: 'Autonomy, honest reflection, earned lessons, clear thinking, doing the work.',
-  standAgainst: 'Performative wisdom, borrowed beliefs, guru culture, vague inspiration without application.',
+  standsFor: 'Autonomy, honest reflection, earned lessons, clear thinking, doing the work.',
+  standsAgainst: 'Performative wisdom, borrowed beliefs, guru culture, vague inspiration without application.',
   voiceFingerprint: DEFAULT_VOICE_FINGERPRINT,
   influences: [
     { name: 'Naval Ravikant', handle: '@naval', topic: 'philosophy, wealth, decision-making' },
@@ -254,7 +256,19 @@ function reducer(state, action) {
 }
 
 export function AppProvider({ children }) {
-  const [state, dispatch] = useReducer(reducer, initialState);
+  const [state, dispatch] = useReducer(reducer, null, () => {
+    // Try restoring a saved session first
+    const session = loadSession()
+    if (session) return { ...initialState, ...session, isLoading: false, error: null, rssItems: [] }
+    // Otherwise start fresh but load brand from BrandSettings storage
+    const storageBrand = storage.getBrand()
+    return storageBrand ? { ...initialState, brand: storageBrand } : initialState
+  });
+
+  // Keep storage brand in sync so BrandSettings reads the latest
+  useEffect(() => {
+    storage.setBrand(state.brand)
+  }, [state.brand])
 
   // Persist on every meaningful state change
   useEffect(() => {

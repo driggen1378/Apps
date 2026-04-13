@@ -1,0 +1,30 @@
+import { AppProvider, useApp } from '../context/AppContext'
+import HomeScreen from '../screens/HomeScreen'
+import QAScreen from '../screens/QAScreen'
+import DraftScreen from '../screens/DraftScreen'
+import HeadlinesScreen from '../screens/HeadlinesScreen'
+import FilterScreen from '../screens/FilterScreen'
+import DiscoveryScreen from '../screens/DiscoveryScreen'
+
+function CreateInner() {
+  const { state, SCREENS } = useApp()
+
+  return (
+    <div className="flex flex-col h-full min-h-0 bg-[#0f1117] text-slate-200">
+      {state.screen === SCREENS.HOME      && <HomeScreen />}
+      {state.screen === SCREENS.QA        && <QAScreen />}
+      {state.screen === SCREENS.DRAFT     && <DraftScreen />}
+      {state.screen === SCREENS.HEADLINES && <HeadlinesScreen />}
+      {state.screen === SCREENS.FILTER    && <FilterScreen />}
+      {state.screen === SCREENS.DISCOVERY && <DiscoveryScreen />}
+    </div>
+  )
+}
+
+export default function Create() {
+  return (
+    <AppProvider>
+      <CreateInner />
+    </AppProvider>
+  )
+}
