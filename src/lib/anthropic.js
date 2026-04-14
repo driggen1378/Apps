@@ -44,31 +44,45 @@ async function callAPI({ model, max_tokens, temperature, system, messages, tools
 
 const BASE_ROLE = `ROLE: You are a content creation partner for Norman Driggers (RUFIO). Your job is to help him extract, shape, and publish one piece of content — either a newsletter issue of Lessons Learned or a solo podcast episode of Your Finest Hour. You do not write for him. You organize and assemble what he gives you.`
 
-const TASK_LOGIC = `TASK LOGIC — follow this reasoning chain on every call:
-1. Parse the input topic or question
-2. Identify which brand pillar(s) the topic connects to
-3. Map topic → audience pain point (make the connection explicit)
-4. Draft content that answers the question through that lens
-5. Self-check: "Would this audience care? Did we actually answer the question?"`
+const CORE_RULES = `CORE RULES — follow these on every single call:
+1. USE NORMAN'S EXACT WORDS. Your job is to organize and arrange, not to write. Use 90%+ of his specific phrasing, sentences, and examples verbatim. Do not substitute his words with "elevated" or more "professional" alternatives.
+2. NEVER INVENT. Do not fabricate stories, examples, anecdotes, or scenarios. If a section needs a specific personal detail that Norman did not provide, write [FILL IN: what's needed here] as a placeholder. Never fill the gap yourself.
+3. DO NOT ADD. No transition phrases ("Moreover," "In conclusion," "It's worth noting"). No academic flourishes. No summaries he didn't write. No interpretive framing. No "This shows us that..."
+4. KEEP HIS VOICE. If he said "man up," "kinda," "honestly," "look" — keep it. His casual, slightly skeptical, conversational tone is the product. Polishing it away is the mistake.
+5. ORGANIZATION ONLY. Your allowed moves: remove redundancy, fix grammar/punctuation, arrange for logical flow, apply the format structure.`
 
-const OUTPUT_FORMATS = `OUTPUT FORMATS:
-NEWSLETTER (400 words maximum):
+const NEWSLETTER_FORMAT = `NEWSLETTER FORMAT (400 words maximum):
+
 Hi friend,
-[Hook — one story detail or quote. Specific. Not a thesis.]
-[Very short story + practical application — insight lands on the reader, not on Norman.]
-[What this means — the decision frame, not the answer. Never prescriptive. Never "you should."]
-[Podcast CTA — one sentence only, only if directly connected. Never forced.]
-[Closing comment — one sentence, personal, direct. Not a summary. Not a moral.]
-Fights On,
-RUFIO
 
-PODCAST SCRIPT (800-1000 words):
-[Intro: "Hey everyone, welcome back to Your Finest Hour. I'm your host, Rufio, and this week I want to talk about..." — state the topic and why it's on Norman's mind right now.]
-[Context: why this topic matters, personal connection to it]
-[Main story or scenario — specific, detailed, real]
-[Three numbered takeaways — each tied to the story, reader-centered]
-[CTA: like, subscribe, tell a friend — one sentence each, natural not forced]
-[Personal closer — specific to the day, the moment, something real. "See you."]`
+[2–4 sentences. Something real from Norman's week — a specific moment, not a concept. Pulled directly from his Q&A answers. If he didn't give you a personal opening, write [FILL IN: one real thing from your week that connects to this]. Never invent the moment.]
+
+Thoughts I had: [1–3 sentences. The common belief or assumption about this topic — stated plainly as something people actually think. Start in the middle, no setup. Use Norman's words from his Q&A answers.]
+
+Lessons Learned: [2–4 sentences. Why that belief is incomplete. The reframe. Two sentences of Norman's lived experience as proof — use his exact words from his Q&A. If he didn't give you lived proof, write [FILL IN: specific moment where you saw this play out].]
+
+[Named Mental Model]: [3–5 short bullets or sentences. Name it what Norman would say out loud to a friend — "The Socratic Loop," "Interaction Residue," "The Business of Attention." If it sounds like a PowerPoint title, rename it. Each bullet is one plain, useful sentence from his Q&A answers.]
+
+Fights On,
+RUFIO`
+
+const PODCAST_FORMAT = `PODCAST SCRIPT FORMAT (800–1000 words, essay structure):
+
+Write the script as a series of titled sections — one section per Q&A answer provided. Each section is ~150–200 words.
+
+INTRO (no section title): "Hey everyone, welcome back to Your Finest Hour. I'm your host, Rufio. This week: [state the core question and why it's on Norman's mind RIGHT NOW — use his exact words from the input]."
+
+For each Q&A answer, write one section:
+## [SECTION TITLE]
+[Section content — 150-200 words. Use Norman's exact words from his Q&A answer, organized for spoken delivery. Keep "uh" rhythm but remove filler. If a specific detail or story is missing, write [FILL IN: what's needed here] — do not invent it.]
+
+SECTION TITLE CRITERIA — "Truthful packaging, not literal accuracy":
+- Is this the clearest, most compelling promise the section substantially fulfills?
+- Formula: core tension the section addresses + what someone would search for + the honest payoff they'll get
+- Good: "Why Getting Better at Something Can Make You Worse at Knowing When to Use It"
+- Bad: "Improvement and Its Limits" (no tension, no search intent)
+
+CLOSE (no section title): 2-3 numbered takeaways pulled from Norman's words. Personal send-off specific to the day. "See you."`
 
 export function buildSystemPrompt(brand) {
   const pillars = (brand.pillars || []).join(' | ')
@@ -87,15 +101,80 @@ Stands against: ${brand.standsAgainst || brand.standAgainst}`
 
   const influencesBlock = influences ? `INFLUENCES:\n${influences}` : ''
 
-  return [BASE_ROLE, brandBlock, voiceBlock, influencesBlock, TASK_LOGIC, OUTPUT_FORMATS]
+  return [BASE_ROLE, brandBlock, voiceBlock, influencesBlock, CORE_RULES, NEWSLETTER_FORMAT, PODCAST_FORMAT]
     .filter(Boolean)
     .join('\n\n')
 }
 
 // ── Assess input ──────────────────────────────────────────────────────────────
 
-export async function assessInput(rawInput, brand) {
-  const instruction = `Read the input carefully. Assess whether it is RICH (clear central idea, story present, enough to work with) or THIN (vague, early-stage, missing key sections). Return a JSON object with this exact shape:
+export async function assessInput(rawInput, brand, outputType) {
+  let instruction
+
+  if (outputType === 'newsletter') {
+    instruction = `You are generating extraction questions to draw out Norman's specific words for a newsletter draft.
+
+Generate exactly 4 questions — one per newsletter section. Each question has A/B/C/D options derived specifically from what Norman actually wrote in the input below. Options should surface his specific angles, stories, and phrasing — not generic choices.
+
+Return a JSON object with this exact shape:
+{
+  "assessment": "newsletter",
+  "questions": [
+    {
+      "question": "string",
+      "options": [
+        { "label": "A", "text": "string" },
+        { "label": "B", "text": "string" },
+        { "label": "C", "text": "string" },
+        { "label": "D", "text": "string" }
+      ]
+    }
+  ]
+}
+
+The 4 questions must be exactly these (in this order), with options tailored to the input:
+
+Q1 (Opening): "Walk me through one specific thing that happened this week — a moment, a conversation, a realization — that connects to what you're writing about. Details only, no framing."
+
+Q2 (Thoughts I had): "What's the common belief or assumption about this that you've found isn't quite right? Say it the way someone actually thinks it."
+
+Q3 (Lessons Learned): "Tell me about a specific moment when you saw the real version of this play out — in your life, your career, someone you know. Give me the scene."
+
+Q4 (Mental Model): "If you had to name this pattern — what would you call it? Something you'd actually say to a friend, not a label that sounds important."
+
+Options A/B/C/D for each question must be specific framings or angles drawn from what Norman actually wrote. Do not use generic placeholder options.
+Return ONLY the JSON object. No markdown fences. No commentary.
+
+INPUT:
+${rawInput}`
+  } else if (outputType === 'podcast') {
+    instruction = `You are generating extraction questions to draw out Norman's specific words for a podcast script.
+
+Generate 3–5 questions — each extracts one specific beat or section of the essay. Questions should draw out stories, specific details, and personal experience. Each question has A/B/C/D options derived specifically from what Norman actually wrote in the input below.
+
+Return a JSON object with this exact shape:
+{
+  "assessment": "podcast",
+  "questions": [
+    {
+      "question": "string",
+      "options": [
+        { "label": "A", "text": "string" },
+        { "label": "B", "text": "string" },
+        { "label": "C", "text": "string" },
+        { "label": "D", "text": "string" }
+      ]
+    }
+  ]
+}
+
+Each question should target a distinct beat of the topic — the setup, the tension, the story, the insight, the application. Options must be specific to what Norman actually wrote. Do not use generic placeholder options.
+Return ONLY the JSON object. No markdown fences. No commentary.
+
+INPUT:
+${rawInput}`
+  } else {
+    instruction = `Read the input carefully. Assess whether it is RICH (clear central idea, story present, enough to work with) or THIN (vague, early-stage, missing key sections). Return a JSON object with this exact shape:
 {
   "assessment": "rich" | "thin",
   "questions": [
@@ -117,6 +196,7 @@ Return ONLY the JSON object. No markdown fences. No commentary.
 
 INPUT:
 ${rawInput}`
+  }
 
   const response = await callAPI({
     model: 'claude-haiku-4-5-20251001',
@@ -156,7 +236,15 @@ ${rawInput}
 Q&A answers:
 ${conversation}
 ${tensionBlock}
-Assemble a NEWSLETTER draft using the newsletter format and voice fingerprint. Return only the newsletter draft — no commentary. 400 words maximum. Then on a new line: WORDCOUNT: [n]`
+Assemble a NEWSLETTER draft using the NEWSLETTER FORMAT from the system prompt.
+
+ASSEMBLY RULES:
+- Use 90%+ of Norman's exact words from the Q&A answers above.
+- Map answers to sections: Answer 1 → Hi friend opening, Answer 2 → Thoughts I had, Answer 3 → Lessons Learned, Answer 4 → [Named Mental Model].
+- Where a section needs personal detail Norman did not provide, write [FILL IN: what's needed here]. Never invent.
+- Do not add transition phrases, summaries, or framing he did not write.
+
+Return only the newsletter draft — no commentary. 400 words maximum. Then on a new line: WORDCOUNT: [n]`
 
   const response = await callAPI({
     model: 'claude-sonnet-4-6',
@@ -185,7 +273,16 @@ ${rawInput}
 Q&A answers:
 ${conversation}
 ${tensionBlock}
-Assemble a PODCAST SCRIPT using the podcast format and voice fingerprint. This is a solo episode of Your Finest Hour. Write it as spoken word — how Norman actually talks, not how he writes. Keep the "uh" rhythm of his natural speech but clean up the filler — aim for natural without sounding scripted. 800-1000 words. Return only the script — no commentary. Then on a new line: WORDCOUNT: [n]`
+Assemble a PODCAST SCRIPT using the PODCAST SCRIPT FORMAT from the system prompt.
+
+ASSEMBLY RULES:
+- Each Q&A answer below becomes one section of the podcast essay.
+- Use 90%+ of Norman's exact words from each answer.
+- Title each section using the truthful packaging criteria: core tension + search intent + honest payoff. Not vague, not generic.
+- Where a section needs specific detail Norman did not provide, write [FILL IN: what's needed here]. Never invent.
+- Write for spoken delivery — keep the natural rhythm, remove filler words only.
+
+800-1000 words. Return only the script — no commentary. Then on a new line: WORDCOUNT: [n]`
 
   const response = await callAPI({
     model: 'claude-sonnet-4-6',
@@ -211,7 +308,7 @@ ${currentDraft}
 Feedback from Norman:
 ${feedback}
 
-Revise the draft based on this feedback. Apply the voice fingerprint. ${formatNote} Return only the revised draft — no commentary. Then return WORDCOUNT: [n]`
+Revise the draft based on this feedback. Apply the voice fingerprint. ${formatNote} Keep 90%+ of the existing words. Your job is to rearrange, tighten, and fix grammar only — do not substitute Norman's phrasing with alternatives. If he uses casual language ("kinda," "honestly," "look"), keep it. Return only the revised draft — no commentary. Then return WORDCOUNT: [n]`
 
   const response = await callAPI({
     model: 'claude-haiku-4-5-20251001',
@@ -302,6 +399,12 @@ After searching, return results as JSON:
   ]
 }
 plain_version: rewritten at Grade 5-6 reading level in Norman's voice — plain, not clever.
+
+TITLE GRADING CRITERIA — "Truthful packaging, not literal accuracy":
+For each headline's plain_version, ask: Is this the clearest, most compelling promise this content substantially fulfills?
+Formula: core tension + search intent + honest payoff.
+Reject titles that are: vague ("The Power of X"), generic ("How to Improve"), or promise more than the content delivers.
+
 Return ONLY the JSON. No markdown fences. No commentary.`
 
   const messages = [{ role: 'user', content: instruction }]
