@@ -10,11 +10,6 @@ export default function QAScreen() {
   const [freeText, setFreeText] = useState('');
   const [showFreeText, setShowFreeText] = useState(false);
 
-  // If output type not yet chosen, show the selector first
-  if (!state.outputType) {
-    return <OutputTypeSelector />;
-  }
-
   const question = questions[currentQuestionIndex];
   const totalQuestions = questions.length;
   const isLast = currentQuestionIndex === totalQuestions - 1;
@@ -174,48 +169,6 @@ export default function QAScreen() {
           </button>
         </div>
       </div>
-    </div>
-  );
-}
-
-function OutputTypeSelector() {
-  const { state, dispatch, SCREENS, OUTPUT_TYPES } = useApp();
-
-  function select(type) {
-    dispatch({ type: 'SET_OUTPUT_TYPE', value: type });
-    // If they came from discovery with questions already set, go straight to Q&A
-    // Otherwise go back — shouldn't happen but guard anyway
-  }
-
-  return (
-    <div className="flex flex-col h-full min-h-0 items-center justify-center px-8">
-      <p className="text-xs text-slate-500 font-mono uppercase tracking-wider mb-4">What are we making?</p>
-      <h2 className="text-2xl font-semibold text-white mb-8 text-center">Choose your output</h2>
-
-      <div className="flex gap-4 w-full max-w-md">
-        <button onClick={() => select(OUTPUT_TYPES.NEWSLETTER)}
-          className="flex-1 flex flex-col items-center gap-3 px-6 py-8 bg-[#141620] border border-[#2a2d3e] hover:border-blue-500 rounded-xl transition-all group">
-          <span className="text-3xl">✉️</span>
-          <div className="text-center">
-            <p className="text-sm font-semibold text-white group-hover:text-blue-300 transition-colors">Newsletter</p>
-            <p className="text-xs text-slate-500 mt-1">Lessons Learned<br />400 words</p>
-          </div>
-        </button>
-
-        <button onClick={() => select(OUTPUT_TYPES.PODCAST)}
-          className="flex-1 flex flex-col items-center gap-3 px-6 py-8 bg-[#141620] border border-[#2a2d3e] hover:border-purple-500 rounded-xl transition-all group">
-          <span className="text-3xl">🎙️</span>
-          <div className="text-center">
-            <p className="text-sm font-semibold text-white group-hover:text-purple-300 transition-colors">Podcast Script</p>
-            <p className="text-xs text-slate-500 mt-1">Your Finest Hour<br />800–1000 words</p>
-          </div>
-        </button>
-      </div>
-
-      <button onClick={() => dispatch({ type: 'SET_SCREEN', screen: SCREENS.HOME })}
-        className="mt-8 text-sm text-slate-500 hover:text-slate-300 transition-colors">
-        ← Back
-      </button>
     </div>
   );
 }

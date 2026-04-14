@@ -554,6 +554,79 @@ ${draft}`
   return response.content.find(b => b.type === 'text')?.text || ''
 }
 
+// ── Fill in a placeholder with Norman's actual words ─────────────────────────
+
+export async function fillInPlaceholder(draft, placeholder, userWords, outputType, brand) {
+  const formatNote = outputType === 'podcast' ? 'podcast script' : 'newsletter'
+
+  const instruction = `This ${formatNote} draft has a placeholder: ${placeholder}
+
+Norman's actual words to use there:
+"${userWords}"
+
+Replace the placeholder with his words. Use 90%+ of his exact phrasing. Clean grammar/punctuation only — do not rewrite what he said, do not add transitions, do not make it sound more polished. His casual voice is correct.
+
+Return the full updated draft. Then on a new line: WORDCOUNT: [n]
+
+DRAFT:
+${draft}`
+
+  const response = await callAPI({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 3000,
+    temperature: 0.2,
+    system: buildSystemPrompt(brand),
+    messages: [{ role: 'user', content: instruction }],
+  })
+
+  return parseDraftResponse(response.content.find(b => b.type === 'text')?.text || '')
+}
+
+// ── Repurpose existing content ────────────────────────────────────────────────
+
+export async function repurposeContent(sourceContent, targetType, brand) {
+  const instruction = `Norman has an existing piece he wants to build a ${targetType} from.
+
+Existing content:
+${sourceContent}
+
+1. Extract the core question this piece is exploring.
+2. Extract the main personal story or example.
+3. Extract the central insight or lesson.
+4. Generate 3–4 extraction questions that would help Norman expand this into a ${targetType}. Each question should draw out details, angles, or stories he didn't fully develop in the original.
+
+Each question needs A/B/C/D options — specific to what's actually in the existing piece.
+
+Return JSON only, no markdown fences:
+{
+  "coreQuestion": "string",
+  "coreConcept": "string",
+  "keyInsight": "string",
+  "assessment": "${targetType}",
+  "questions": [
+    {
+      "question": "string",
+      "options": [
+        { "label": "A", "text": "string" },
+        { "label": "B", "text": "string" },
+        { "label": "C", "text": "string" },
+        { "label": "D", "text": "string" }
+      ]
+    }
+  ]
+}`
+
+  const response = await callAPI({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 1200,
+    temperature: 0.7,
+    system: buildSystemPrompt(brand),
+    messages: [{ role: 'user', content: instruction }],
+  })
+
+  return parseJSON(response.content.find(b => b.type === 'text')?.text || '')
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function parseDraftResponse(text) {
