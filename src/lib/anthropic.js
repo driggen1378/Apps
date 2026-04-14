@@ -131,18 +131,31 @@ ${rawInput}`
 
 // ── Assemble newsletter draft ─────────────────────────────────────────────────
 
-export async function assembleNewsletter(rawInput, answers, brand) {
+function buildTensionMapBlock(tensionMap) {
+  if (!tensionMap) return ''
+  const lines = []
+  if (tensionMap.competingExplanations?.trim()) lines.push(`Competing explanations: ${tensionMap.competingExplanations}`)
+  if (tensionMap.whatMakesItHard?.trim()) lines.push(`What makes it hard: ${tensionMap.whatMakesItHard}`)
+  if (tensionMap.commonBadAdvice?.trim()) lines.push(`Common bad advice: ${tensionMap.commonBadAdvice}`)
+  if (tensionMap.realLifeStakes?.trim()) lines.push(`Real-life stakes: ${tensionMap.realLifeStakes}`)
+  if (!lines.length) return ''
+  return `\nTension map (use this to inform the distinctive angle):\n${lines.join('\n')}`
+}
+
+export async function assembleNewsletter(rawInput, answers, brand, tensionMap) {
   const conversation = answers
     .filter(a => a.answer !== '[skipped]')
     .map(a => `Q: ${a.question}\nA: ${a.answer}`)
     .join('\n\n')
+
+  const tensionBlock = buildTensionMapBlock(tensionMap)
 
   const instruction = `Raw input from Norman:
 ${rawInput}
 
 Q&A answers:
 ${conversation}
-
+${tensionBlock}
 Assemble a NEWSLETTER draft using the newsletter format and voice fingerprint. Return only the newsletter draft — no commentary. 400 words maximum. Then on a new line: WORDCOUNT: [n]`
 
   const response = await callAPI({
@@ -158,18 +171,20 @@ Assemble a NEWSLETTER draft using the newsletter format and voice fingerprint. R
 
 // ── Assemble podcast script ───────────────────────────────────────────────────
 
-export async function assemblePodcast(rawInput, answers, brand) {
+export async function assemblePodcast(rawInput, answers, brand, tensionMap) {
   const conversation = answers
     .filter(a => a.answer !== '[skipped]')
     .map(a => `Q: ${a.question}\nA: ${a.answer}`)
     .join('\n\n')
+
+  const tensionBlock = buildTensionMapBlock(tensionMap)
 
   const instruction = `Raw input from Norman:
 ${rawInput}
 
 Q&A answers:
 ${conversation}
-
+${tensionBlock}
 Assemble a PODCAST SCRIPT using the podcast format and voice fingerprint. This is a solo episode of Your Finest Hour. Write it as spoken word — how Norman actually talks, not how he writes. Keep the "uh" rhythm of his natural speech but clean up the filler — aim for natural without sounding scripted. 800-1000 words. Return only the script — no commentary. Then on a new line: WORDCOUNT: [n]`
 
   const response = await callAPI({
@@ -351,6 +366,89 @@ ${draft}`
   })
 
   return parseJSON(response.content.find(b => b.type === 'text')?.text || '')
+}
+
+// ── Generate candidate questions from Ideas Board ────────────────────────────
+
+export async function generateCandidateQuestions(items, brand) {
+  const itemDescriptions = items.map((item, i) => {
+    const parts = [`${i + 1}. Title: ${item.title}`, `   Source: ${item.source || 'Unknown'}`]
+    if (item.reflections?.why) parts.push(`   Why it grabbed me: ${item.reflections.why}`)
+    if (item.reflections?.suggests) parts.push(`   What it suggests is true: ${item.reflections.suggests}`)
+    if (item.reflections?.disagree) parts.push(`   Where I disagree: ${item.reflections.disagree}`)
+    return parts.join('\n')
+  }).join('\n\n')
+
+  const instruction = `Based on these items from the Ideas Board, generate 5 sharp candidate questions for ${brand.newsletterName || 'Lessons Learned'} or ${brand.podcastName || 'Your Finest Hour'}.
+
+Items:
+${itemDescriptions}
+
+WHAT MAKES A GOOD QUESTION:
+- Has genuine tension — there is no clean answer
+- Names something the audience feels but hasn't said out loud
+- Invites earned perspective, not advice
+- Examples of the RIGHT kind: "Why do competent people become performative when they want to improve?" / "What does it cost to keep leading people who've stopped trusting you?" / "Why is the version of you that started performing better also the version that lost the most?"
+
+WHAT MAKES A BAD QUESTION:
+- Topic labels: "How do leaders deal with change?" — too broad, no tension
+- Advice prompts: "What should you do when X?" — invites prescriptions
+- Vague: "What does success really mean?" — no stakes
+
+For each question, provide one sentence of tension — what makes it hard or unresolved.
+
+Return JSON only, no markdown fences:
+{
+  "questions": [
+    { "question": "string", "tension": "string" }
+  ]
+}`
+
+  const response = await callAPI({
+    model: 'claude-sonnet-4-6',
+    max_tokens: 1000,
+    temperature: 0.9,
+    system: buildSystemPrompt(brand),
+    messages: [{ role: 'user', content: instruction }],
+  })
+
+  return parseJSON(response.content.find(b => b.type === 'text')?.text || '')
+}
+
+// ── Generate speaking outline ─────────────────────────────────────────────────
+
+export async function generateSpeakingOutline(draft, outputType, brand) {
+  const formatNote = outputType === 'podcast'
+    ? 'This is a podcast script.'
+    : 'This is a newsletter.'
+
+  const instruction = `${formatNote}
+
+Create a speaking outline for this draft — NOT a script. A structure to speak from.
+
+Format:
+- Opening hook: one sentence describing the opening moment or image
+- Beat 1: one plain sentence describing what happens here
+- Beat 2: one plain sentence describing what happens here
+- Beat 3: one plain sentence describing what happens here
+- Beat 4: one plain sentence describing what happens here
+- (Beat 5 and 6 if the piece warrants them)
+- Closing line: one sentence describing how it lands
+
+Each beat is a description of what happens, not the content itself. Plain language. No bullet-within-bullets. No headers.
+
+DRAFT:
+${draft}`
+
+  const response = await callAPI({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 600,
+    temperature: 0.3,
+    system: buildSystemPrompt(brand),
+    messages: [{ role: 'user', content: instruction }],
+  })
+
+  return response.content.find(b => b.type === 'text')?.text || ''
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

@@ -13,6 +13,9 @@ export const SCREENS = {
   DISCOVERY: 'discovery',
   IDEAS: 'ideas',
   BRAND: 'brand',
+  QUESTION_FORMATION: 'question_formation',
+  TENSION_MAP: 'tension_map',
+  ARCHIVE: 'archive',
 };
 
 export const OUTPUT_TYPES = {
@@ -110,6 +113,17 @@ const initialState = {
   // RSS
   rssItems: [],               // fetched RSS items, not persisted (refetch on load)
 
+  // Question formation flow
+  candidateQuestions: [],
+  selectedQuestion: '',
+  tensionMap: {
+    competingExplanations: '',
+    whatMakesItHard: '',
+    commonBadAdvice: '',
+    realLifeStakes: '',
+  },
+  speakingOutline: '',
+
   // UI state
   isLoading: false,
   error: null,
@@ -137,6 +151,15 @@ function reducer(state, action) {
         headlines: [],
         filterResults: null,
         filterStatus: 'not_run',
+        candidateQuestions: [],
+        selectedQuestion: '',
+        tensionMap: {
+          competingExplanations: '',
+          whatMakesItHard: '',
+          commonBadAdvice: '',
+          realLifeStakes: '',
+        },
+        speakingOutline: '',
         isLoading: false,
         error: null,
       };
@@ -243,6 +266,18 @@ function reducer(state, action) {
         ideasBoard: alreadyThere ? state.ideasBoard : [item, ...state.ideasBoard],
       };
     }
+
+    case 'SET_CANDIDATE_QUESTIONS':
+      return { ...state, candidateQuestions: action.questions };
+
+    case 'SET_SELECTED_QUESTION':
+      return { ...state, selectedQuestion: action.question };
+
+    case 'SET_TENSION_MAP':
+      return { ...state, tensionMap: action.map };
+
+    case 'SET_SPEAKING_OUTLINE':
+      return { ...state, speakingOutline: action.outline };
 
     case 'SET_LOADING':
       return { ...state, isLoading: action.value };

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { runFilterCheck } from '../lib/anthropic';
+import { storage } from '../lib/storage';
 
 export default function FilterScreen() {
   const { state, dispatch, SCREENS, currentDraft } = useApp();
@@ -52,6 +53,14 @@ export default function FilterScreen() {
       document.execCommand('copy');
       document.body.removeChild(ta);
     }
+    storage.saveToArchive({
+      question: state.rawInput,
+      outputType: state.outputType,
+      subjectLine: state.subjectLine,
+      wordCount,
+      publishedAt: Date.now(),
+    });
+
     setCopied(true);
     setTimeout(() => setCopied(false), 3000);
   }

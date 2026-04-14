@@ -74,7 +74,7 @@ export default function QAScreen() {
 
     try {
       const assembler = state.outputType === OUTPUT_TYPES.PODCAST ? assemblePodcast : assembleNewsletter;
-      const { draft, wordCount } = await assembler(state.rawInput, allAnswers, state.brand);
+      const { draft, wordCount } = await assembler(state.rawInput, allAnswers, state.brand, state.tensionMap);
       dispatch({ type: 'ADD_DRAFT_VERSION', draft, wordCount });
       dispatch({ type: 'SET_SCREEN', screen: SCREENS.DRAFT });
     } catch (err) {

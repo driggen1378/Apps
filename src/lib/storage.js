@@ -34,4 +34,17 @@ export const storage = {
   setBoard: v  => set('ll-board', v),
   getKey:   () => localStorage.getItem('ll-api-key') || '',
   setKey:   v  => localStorage.setItem('ll-api-key', v),
+  getArchive: () => get('ll-archive', []),
+  saveToArchive: (entry) => {
+    const existing = get('ll-archive', [])
+    set('ll-archive', [{ id: Date.now(), ...entry }, ...existing])
+  },
+}
+
+export const archiveStorage = {
+  get: () => get('ll-archive', []),
+  save: (entry) => {
+    const existing = get('ll-archive', [])
+    set('ll-archive', [{ id: Date.now(), ...entry }, ...existing])
+  },
 }
