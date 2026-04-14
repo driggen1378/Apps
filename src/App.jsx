@@ -2,10 +2,12 @@ import { useState } from 'react'
 import BrandSettings from './components/BrandSettings'
 import Create from './components/Create'
 import Ideas from './components/Ideas'
+import ArchiveScreen from './screens/ArchiveScreen'
 
 const NAV = [
   { id: 'create', label: 'Create', icon: '✍️' },
   { id: 'ideas',  label: 'Ideas',  icon: '💡' },
+  { id: 'archive', label: 'Archive', icon: '📁' },
   { id: 'settings', label: 'Brand Settings', icon: '⚙️' },
 ]
 
@@ -46,6 +48,7 @@ export default function App() {
       <main className="flex-1 overflow-hidden">
         {section === 'create'   && <Create />}
         {section === 'ideas'    && <Ideas />}
+        {section === 'archive'  && <ArchiveScreen />}
         {section === 'settings' && <BrandSettings />}
       </main>
     </div>

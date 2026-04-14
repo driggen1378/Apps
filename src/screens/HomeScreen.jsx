@@ -102,15 +102,25 @@ export default function HomeScreen() {
         )}
 
         <div className="flex items-center gap-3 justify-between">
-          {/* Discovery path */}
-          <button
-            onClick={handleDiscovery}
-            disabled={state.isLoading}
-            className="flex items-center gap-2 px-4 py-3 bg-[#141620] border border-[#2a2d3e] text-slate-400 hover:text-white hover:border-slate-500 text-sm rounded-lg transition-all disabled:opacity-40"
-          >
-            <span className="text-base">🔍</span>
-            I don't know — what are others saying?
-          </button>
+          {/* Discovery + Ideas Board paths */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleDiscovery}
+              disabled={state.isLoading}
+              className="flex items-center gap-2 px-4 py-3 bg-[#141620] border border-[#2a2d3e] text-slate-400 hover:text-white hover:border-slate-500 text-sm rounded-lg transition-all disabled:opacity-40"
+            >
+              <span className="text-base">🔍</span>
+              I don't know — what are others saying?
+            </button>
+            <button
+              onClick={() => dispatch({ type: 'SET_SCREEN', screen: SCREENS.QUESTION_FORMATION })}
+              disabled={state.isLoading}
+              className="flex items-center gap-2 px-4 py-3 bg-[#141620] border border-[#2a2d3e] text-slate-400 hover:text-white hover:border-slate-500 text-sm rounded-lg transition-all disabled:opacity-40"
+            >
+              <span className="text-base">💡</span>
+              Build from Ideas Board →
+            </button>
+          </div>
 
           {/* Submit */}
           <div className="flex items-center gap-3">

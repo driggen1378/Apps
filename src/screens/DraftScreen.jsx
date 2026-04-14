@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
-import { reviseDraft } from '../lib/anthropic';
+import { reviseDraft, generateSpeakingOutline } from '../lib/anthropic';
 
 export default function DraftScreen() {
   const { state, dispatch, SCREENS, OUTPUT_TYPES, currentDraft } = useApp();
@@ -8,6 +8,9 @@ export default function DraftScreen() {
   const chatEndRef = useRef(null);
   const [chatHistory, setChatHistory] = useState([]);
   const [versionOpen, setVersionOpen] = useState(false);
+  const [outlineModalOpen, setOutlineModalOpen] = useState(false);
+  const [outlineText, setOutlineText] = useState('');
+  const [outlineLoading, setOutlineLoading] = useState(false);
 
   const draft = currentDraft?.draft || '';
   const wordCount = currentDraft?.wordCount || 0;
@@ -61,6 +64,21 @@ export default function DraftScreen() {
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleRevise();
   }
 
+  async function handleSpeakingOutline() {
+    if (outlineLoading || !draft) return;
+    setOutlineLoading(true);
+    setOutlineModalOpen(true);
+    setOutlineText('');
+    try {
+      const result = await generateSpeakingOutline(draft, state.outputType, state.brand);
+      setOutlineText(result);
+    } catch (err) {
+      setOutlineText(`Error: ${err.message || 'Failed to generate outline.'}`);
+    } finally {
+      setOutlineLoading(false);
+    }
+  }
+
   const versionLabel = (i) => {
     const v = state.draftVersions[i];
     const d = new Date(v.timestamp);
@@ -68,7 +86,35 @@ export default function DraftScreen() {
   };
 
   return (
-    <div className="flex flex-col h-full min-h-0">
+    <div className="flex flex-col h-full min-h-0 relative">
+      {outlineModalOpen && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/70">
+          <div className="bg-[#141620] border border-[#2a2d3e] rounded-2xl shadow-2xl w-full max-w-lg mx-6 flex flex-col max-h-[80vh]">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-[#2a2d3e]">
+              <span className="text-sm font-semibold text-white">Speaking Outline</span>
+              <button onClick={() => setOutlineModalOpen(false)}
+                className="text-slate-500 hover:text-white transition-colors text-lg leading-none">✕</button>
+            </div>
+            <div className="flex-1 overflow-y-auto px-6 py-5">
+              {outlineLoading ? (
+                <div className="flex items-center justify-center py-8 gap-2">
+                  <LoadingDots />
+                  <span className="text-sm text-slate-500 ml-2">Building outline…</span>
+                </div>
+              ) : (
+                <pre className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap font-mono select-all">{outlineText}</pre>
+              )}
+            </div>
+            <div className="px-6 py-4 border-t border-[#2a2d3e] flex justify-end">
+              <button onClick={() => { try { navigator.clipboard.writeText(outlineText) } catch {} }}
+                disabled={outlineLoading || !outlineText}
+                className="text-xs text-slate-300 hover:text-white border border-[#2a2d3e] hover:border-slate-500 px-3 py-1.5 rounded-lg transition-all disabled:opacity-40">
+                Copy to clipboard
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="flex flex-1 min-h-0">
         {/* LEFT — draft */}
         <div className="flex-1 flex flex-col min-h-0 border-r border-[#1e2130]">
@@ -126,10 +172,16 @@ export default function DraftScreen() {
         <div className="w-80 flex flex-col min-h-0 bg-[#0c0e18]">
           <div className="flex items-center justify-between px-4 py-3 border-b border-[#1e2130]">
             <span className="text-xs text-slate-500 font-mono uppercase tracking-wider">Revisions</span>
-            <button onClick={() => dispatch({ type: 'SET_SCREEN', screen: SCREENS.HEADLINES })}
-              className="text-xs text-slate-300 hover:text-white border border-[#2a2d3e] hover:border-slate-500 px-2.5 py-1 rounded-lg transition-all">
-              Find headlines →
-            </button>
+            <div className="flex items-center gap-2">
+              <button onClick={handleSpeakingOutline} disabled={outlineLoading || !draft}
+                className="text-xs text-slate-300 hover:text-white border border-[#2a2d3e] hover:border-slate-500 px-2.5 py-1 rounded-lg transition-all disabled:opacity-40">
+                {outlineLoading ? 'Building…' : 'Speaking outline'}
+              </button>
+              <button onClick={() => dispatch({ type: 'SET_SCREEN', screen: SCREENS.HEADLINES })}
+                className="text-xs text-slate-300 hover:text-white border border-[#2a2d3e] hover:border-slate-500 px-2.5 py-1 rounded-lg transition-all">
+                Find headlines →
+              </button>
+            </div>
           </div>
 
           <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3 min-h-0">

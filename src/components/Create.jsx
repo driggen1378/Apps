@@ -5,18 +5,22 @@ import DraftScreen from '../screens/DraftScreen'
 import HeadlinesScreen from '../screens/HeadlinesScreen'
 import FilterScreen from '../screens/FilterScreen'
 import DiscoveryScreen from '../screens/DiscoveryScreen'
+import QuestionFormationScreen from '../screens/QuestionFormationScreen'
+import TensionMapScreen from '../screens/TensionMapScreen'
 
 function CreateInner() {
   const { state, SCREENS } = useApp()
 
   return (
     <div className="flex flex-col h-full min-h-0 bg-[#0f1117] text-slate-200">
-      {state.screen === SCREENS.HOME      && <HomeScreen />}
-      {state.screen === SCREENS.QA        && <QAScreen />}
-      {state.screen === SCREENS.DRAFT     && <DraftScreen />}
-      {state.screen === SCREENS.HEADLINES && <HeadlinesScreen />}
-      {state.screen === SCREENS.FILTER    && <FilterScreen />}
-      {state.screen === SCREENS.DISCOVERY && <DiscoveryScreen />}
+      {state.screen === SCREENS.HOME               && <HomeScreen />}
+      {state.screen === SCREENS.QA                 && <QAScreen />}
+      {state.screen === SCREENS.DRAFT              && <DraftScreen />}
+      {state.screen === SCREENS.HEADLINES          && <HeadlinesScreen />}
+      {state.screen === SCREENS.FILTER             && <FilterScreen />}
+      {state.screen === SCREENS.DISCOVERY          && <DiscoveryScreen />}
+      {state.screen === SCREENS.QUESTION_FORMATION && <QuestionFormationScreen />}
+      {state.screen === SCREENS.TENSION_MAP        && <TensionMapScreen />}
     </div>
   )
 }
