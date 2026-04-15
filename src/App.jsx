@@ -21,19 +21,19 @@ export default function App() {
   }
 
   return (
-    <div className="flex h-screen bg-[#0a1628] text-white overflow-hidden">
+    <div className="relative flex h-screen bg-[#0a1628] text-white overflow-hidden">
 
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-20 bg-black/50 md:hidden"
+          className="absolute inset-0 z-20 bg-black/40 md:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Sidebar */}
       <aside className={`
-        fixed inset-y-0 left-0 z-30 w-52 bg-[#071020] border-r border-[#1e3a5f] flex flex-col shrink-0
+        absolute inset-y-0 left-0 z-30 w-52 bg-[#071020] border-r border-[#1e3a5f] flex flex-col shrink-0
         transition-transform duration-200
         md:static md:translate-x-0
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
