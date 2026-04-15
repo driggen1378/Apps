@@ -59,7 +59,7 @@ export default function QuestionFormationScreen() {
 
   if (boardItems.length === 0) {
     return (
-      <div className="flex flex-col h-full min-h-0 items-center justify-center px-8">
+      <div className="flex flex-col flex-1 min-h-0 items-center justify-center px-8">
         <p className="text-slate-500 text-sm text-center max-w-sm leading-relaxed">
           No items on your Ideas Board yet. Save articles in the Ideas section first.
         </p>
@@ -74,7 +74,7 @@ export default function QuestionFormationScreen() {
   }
 
   return (
-    <div className="flex flex-col h-full min-h-0">
+    <div className="flex flex-col flex-1 min-h-0">
       {/* Header */}
       <div className="flex items-center justify-between px-8 py-5 border-b border-[#1e2130]">
         <div>

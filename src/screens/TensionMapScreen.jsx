@@ -28,7 +28,7 @@ export default function TensionMapScreen() {
   }
 
   return (
-    <div className="flex flex-col h-full min-h-0">
+    <div className="flex flex-col flex-1 min-h-0">
       {/* Header */}
       <div className="flex items-center justify-between px-8 py-5 border-b border-[#1e2130]">
         <div>

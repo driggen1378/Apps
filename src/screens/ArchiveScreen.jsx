@@ -4,7 +4,7 @@ export default function ArchiveScreen() {
   const entries = storage.getArchive();
 
   return (
-    <div className="flex flex-col h-full min-h-0 bg-[#0f1117] text-slate-200">
+    <div className="flex flex-col flex-1 min-h-0 bg-[#0f1117] text-slate-200">
       {/* Header */}
       <div className="px-8 py-6 border-b border-[#1e2130]">
         <h2 className="text-lg font-semibold text-white">Archive</h2>

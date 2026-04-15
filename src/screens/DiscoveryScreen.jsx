@@ -71,7 +71,7 @@ export default function DiscoveryScreen() {
   }
 
   return (
-    <div className="flex flex-col h-full min-h-0">
+    <div className="flex flex-col flex-1 min-h-0">
       <div className="flex items-center justify-between px-8 pt-6 pb-4 border-b border-[#1e2130]">
         <div>
           <h2 className="text-lg font-semibold text-white">What are others saying?</h2>

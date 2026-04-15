@@ -97,7 +97,7 @@ export default function App() {
           </div>
         </div>
 
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
           {section === 'create'   && <Create />}
           {section === 'ideas'    && <Ideas />}
           {section === 'archive'  && <ArchiveScreen />}

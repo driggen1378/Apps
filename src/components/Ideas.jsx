@@ -146,7 +146,7 @@ export default function Ideas() {
   const display = tab === 'feed' ? articles : tab === 'saved' ? saved : board
 
   return (
-    <div className="h-full flex flex-col relative">
+    <div className="flex-1 flex flex-col relative">
       {reflectionTarget && (
         <ReflectionModal
           article={reflectionTarget}

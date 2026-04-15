@@ -83,7 +83,7 @@ export default function QAScreen() {
   const isPodcast = state.outputType === OUTPUT_TYPES.PODCAST;
 
   return (
-    <div className="flex flex-col h-full min-h-0">
+    <div className="flex flex-col flex-1 min-h-0">
       <div className="h-1 bg-[#1e2130]">
         <div className="h-full bg-white transition-all duration-500"
           style={{ width: `${((currentQuestionIndex + 1) / totalQuestions) * 100}%` }} />

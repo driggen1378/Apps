@@ -68,7 +68,7 @@ export default function FilterScreen() {
   const bothPass = results?.brandFilter?.pass && results?.promiseFilter?.pass;
 
   return (
-    <div className="flex flex-col h-full min-h-0 px-8 py-6 max-w-3xl mx-auto w-full">
+    <div className="flex flex-col flex-1 min-h-0 px-8 py-6 max-w-3xl mx-auto w-full">
       <div className="flex items-center justify-between mb-8">
         <h2 className="text-lg font-semibold text-white">Filter Check</h2>
         <button onClick={() => dispatch({ type: 'SET_SCREEN', screen: SCREENS.DRAFT })}

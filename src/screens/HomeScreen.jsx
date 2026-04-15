@@ -74,7 +74,7 @@ export default function HomeScreen() {
   const canSubmit = outputType && (showRepurpose ? sourceContent.trim() : state.rawInput.trim()) && !state.isLoading;
 
   return (
-    <div className="flex flex-col h-screen bg-[#0f1117] text-slate-200">
+    <div className="flex flex-col flex-1 min-h-0 bg-[#0f1117] text-slate-200">
       {/* Header */}
       <div className="flex items-center justify-between px-8 pt-8 pb-4">
         <div>

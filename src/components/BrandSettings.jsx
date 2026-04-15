@@ -40,7 +40,7 @@ export default function BrandSettings() {
   }
 
   return (
-    <div className="h-full overflow-y-auto">
+    <div className="flex-1 overflow-y-auto">
       <div className="max-w-2xl mx-auto px-6 py-8">
         <h1 className="text-[#c5a028] text-2xl font-bold mb-8">Brand Settings</h1>
 

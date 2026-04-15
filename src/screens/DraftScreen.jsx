@@ -118,7 +118,7 @@ export default function DraftScreen() {
   };
 
   return (
-    <div className="flex flex-col h-full min-h-0 relative">
+    <div className="flex flex-col flex-1 min-h-0 relative">
       {outlineModalOpen && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/70">
           <div className="bg-[#141620] border border-[#2a2d3e] rounded-2xl shadow-2xl w-full max-w-lg mx-6 flex flex-col max-h-[80vh]">

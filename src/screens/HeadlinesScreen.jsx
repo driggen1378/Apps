@@ -26,7 +26,7 @@ export default function HeadlinesScreen() {
   }
 
   return (
-    <div className="flex flex-col h-full min-h-0 px-8 py-6 max-w-3xl mx-auto w-full">
+    <div className="flex flex-col flex-1 min-h-0 px-8 py-6 max-w-3xl mx-auto w-full">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-lg font-semibold text-white">Trending Headlines</h2>
         <div className="flex gap-2">
