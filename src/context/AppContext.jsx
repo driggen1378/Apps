@@ -292,10 +292,22 @@ function reducer(state, action) {
 
 export function AppProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, null, () => {
-    // Try restoring a saved session first
     const session = loadSession()
-    if (session) return { ...initialState, ...session, isLoading: false, error: null, rssItems: [] }
-    // Otherwise start fresh but load brand from BrandSettings storage
+    if (session) {
+      const merged = { ...initialState, ...session, isLoading: false, error: null, rssItems: [] }
+      // If the saved screen requires data that isn't present, fall back to HOME
+      // to prevent crashes on screens like QA (needs questions) or Draft (needs versions)
+      const needsQuestions = [SCREENS.QA].includes(merged.screen)
+      const needsDraft = [SCREENS.DRAFT, SCREENS.HEADLINES, SCREENS.FILTER].includes(merged.screen)
+      if (needsQuestions && (!merged.questions || merged.questions.length === 0)) {
+        merged.screen = SCREENS.HOME
+      }
+      if (needsDraft && (!merged.draftVersions || merged.draftVersions.length === 0)) {
+        merged.screen = SCREENS.HOME
+      }
+      return merged
+    }
+    // No session — start fresh but load brand from BrandSettings storage
     const storageBrand = storage.getBrand()
     return storageBrand ? { ...initialState, brand: storageBrand } : initialState
   });

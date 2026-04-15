@@ -4,7 +4,7 @@ import { assembleNewsletter, assemblePodcast } from '../lib/anthropic';
 
 export default function QAScreen() {
   const { state, dispatch, SCREENS, OUTPUT_TYPES } = useApp();
-  const { questions, currentQuestionIndex, answers } = state;
+  const { questions = [], currentQuestionIndex, answers } = state;
 
   const [selected, setSelected] = useState(null);
   const [freeText, setFreeText] = useState('');
@@ -13,6 +13,9 @@ export default function QAScreen() {
   const question = questions[currentQuestionIndex];
   const totalQuestions = questions.length;
   const isLast = currentQuestionIndex === totalQuestions - 1;
+
+  // Guard: if questions are missing (bad session restore), render nothing
+  if (!question) return null;
 
   function handleSelectOption(option) {
     setSelected(option.label);

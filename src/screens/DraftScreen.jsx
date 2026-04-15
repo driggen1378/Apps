@@ -20,6 +20,9 @@ export default function DraftScreen() {
   const [phInput, setPhInput] = useState('');
   const [phLoading, setPhLoading] = useState(false);
 
+  // Guard: if no draft exists (bad session restore), render nothing
+  if (!currentDraft) return null;
+
   const draft = currentDraft?.draft || '';
   const placeholders = extractPlaceholders(draft);
   const wordCount = currentDraft?.wordCount || 0;
