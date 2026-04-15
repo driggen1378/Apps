@@ -180,8 +180,8 @@ export default function HomeScreen() {
               disabled={state.isLoading}
               className="flex items-center gap-2 px-4 py-2.5 bg-[#141620] border border-[#2a2d3e] text-slate-400 hover:text-white hover:border-slate-500 text-sm rounded-lg transition-all disabled:opacity-40"
             >
-              <span>⚡</span>
-              Steal Like an Artist
+              <span>◈</span>
+              Mosaic
             </button>
             <button
               onClick={() => dispatch({ type: 'SET_SCREEN', screen: SCREENS.DISCOVERY })}

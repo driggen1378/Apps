@@ -437,52 +437,52 @@ Return ONLY the JSON. No markdown fences. No commentary.`
   try { return parseJSON(text) } catch { return { headlines: [] } }
 }
 
-// ── Extract tensions ─────────────────────────────────────────────────────────
-// Searches the web for raw material, then surfaces recurring tensions — not topics
-// but the push-pull between opposing forces — to help the user find their angle.
+// ── Mosaic: gather raw source material ──────────────────────────────────────
+// Searches the web for what creators and articles in a territory are already
+// saying, so the user can react from their own experience rather than starting
+// from nothing. No pillars required — works from vague words and influences.
 
-export async function extractTensions(theme, brand) {
-  const pillars = (brand.pillars || []).join(', ')
-  const themeNote = theme?.trim()
-    ? `The user is circling around this theme or question: "${theme.trim()}". Search within that territory.`
-    : `Use the brand pillars as your territory: ${pillars}.`
+export async function gatherMosaic(words, influences, brand) {
+  const wordsNote = words?.trim()
+    ? `The user is orbiting these words and themes: "${words.trim()}".`
+    : `Search broadly across the territory of personal development, identity, transitions, and meaningful work.`
 
-  const instruction = `${themeNote}
+  const influencesNote = influences?.trim()
+    ? `Focus especially on what these creators, writers, and sources are saying: ${influences.trim()}. Also pull in others working in the same space.`
+    : `Search across popular creators, newsletters, and discussions in this space.`
 
-Search for raw material from the internet — Reddit threads, comment sections, Twitter/X debates, newsletter reader replies, forum arguments, and widely-shared headlines. Your goal is NOT to find articles about the topic. Your goal is to find where people are actually in tension with each other or with themselves.
+  const instruction = `${wordsNote} ${influencesNote}
 
-Look specifically for:
-- Recurring debates where people argue opposite things with equal conviction
-- Complaints that reveal what people are afraid of or avoiding
-- Questions people keep asking but no one fully answers
-- The gap between what people say they want and what they actually do
-- Search patterns like "why can't I..." or "should I..." or "is it wrong to..."
+Search the internet for what's already being written, said, and argued in this territory. Include:
+- Articles, essays, newsletters, and podcast episodes from the creators listed above and others nearby
+- Reddit threads, forum discussions, and comment sections
+- Widely-shared takes and counterarguments
 
-From what you find, identify 4–6 recurring TENSIONS. A tension is two poles pulling against each other — not a topic, not a problem, not a theme. Examples:
-- "Ambition vs. peace" — people want both and can't figure out how to have either
-- "Freedom vs. responsibility" — every choice for one costs the other
-- "Authenticity vs. belonging" — being yourself risks losing the group
+For each piece you find, pull the specific angle or claim — not just the topic. What is the creator or article actually arguing? What's their belief, their challenge, their take? Be specific about the source.
 
-For each tension return:
-- name: Short plain label for the tension (3–6 words, no jargon)
-- pole_a: What one side wants or believes (1 plain sentence)
-- pole_b: What the other side wants or believes (1 plain sentence)
-- plain_language: The human version — a single question a normal person would ask a friend (Grade 5–6 reading level)
-- what_people_argue: 2–3 sentences describing how this tension shows up in real threads, comments, or searches — be specific
-- seed_question: A question that brings this tension directly into Norman's life — personal, not rhetorical, not generic
-- source_hint: Where this pattern was found online (e.g., "Reddit r/productivity, LinkedIn comments on burnout posts")
+Return 6–8 tiles — a mosaic of raw source material from across the landscape. Mix types:
+- "creator_take": a specific claim a creator makes ("Austin Kleon argues that stealing ideas is not only ethical — it's how all creative work actually happens")
+- "article_angle": the specific angle a piece makes ("A piece in [outlet] argues that most productivity advice fails because...")
+- "conversation": what a thread or debate reveals ("On Reddit r/selfimprovement, people argue whether discipline is built or inherited")
+
+For each tile return:
+- type: "creator_take" | "article_angle" | "conversation"
+- source: who or where — specific (e.g., "Austin Kleon", "Cal Newport, Deep Work", "r/productivity thread")
+- headline: their specific angle in one plain sentence — the claim, not the topic
+- what_they_say: 2–3 sentences on their actual position — direct and specific, not vague
+- hook: a plain question that invites the user's reaction from their own life — "Do you see it this way?" or "Where did your experience go differently?"
+- url: URL if findable, null otherwise
 
 Return JSON:
 {
-  "tensions": [
+  "tiles": [
     {
-      "name": "string",
-      "pole_a": "string",
-      "pole_b": "string",
-      "plain_language": "string",
-      "what_people_argue": "string",
-      "seed_question": "string",
-      "source_hint": "string"
+      "type": "string",
+      "source": "string",
+      "headline": "string",
+      "what_they_say": "string",
+      "hook": "string",
+      "url": null
     }
   ]
 }
@@ -515,7 +515,7 @@ Return ONLY the JSON. No markdown fences. No commentary.`
   }
 
   const text = response.content.find(b => b.type === 'text')?.text || ''
-  try { return parseJSON(text) } catch { return { tensions: [] } }
+  try { return parseJSON(text) } catch { return { tiles: [] } }
 }
 
 // ── Filter check ──────────────────────────────────────────────────────────────
