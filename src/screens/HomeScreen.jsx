@@ -4,7 +4,7 @@ import { assessInput, repurposeContent } from '../lib/anthropic';
 import { loadSession, hasSession } from '../lib/storage';
 
 export default function HomeScreen() {
-  const { state, dispatch, SCREENS, NAV_SECTIONS, restoreSession } = useApp();
+  const { state, dispatch, SCREENS, restoreSession } = useApp();
   const [outputType, setOutputType] = useState(null);
   const [showRepurpose, setShowRepurpose] = useState(false);
   const [sourceContent, setSourceContent] = useState('');
@@ -76,17 +76,9 @@ export default function HomeScreen() {
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-[#0f1117] text-slate-200">
       {/* Header */}
-      <div className="flex items-center justify-between px-8 pt-8 pb-4">
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight text-white">Lessons Learned</h1>
-          <p className="text-xs text-slate-500 mt-0.5">Draft Workspace — RUFIO</p>
-        </div>
-        <button
-          onClick={() => { dispatch({ type: 'SET_NAV_SECTION', section: NAV_SECTIONS.BRAND }); dispatch({ type: 'SET_SCREEN', screen: SCREENS.BRAND }); }}
-          className="text-xs text-slate-500 hover:text-white border border-[#2a2d3e] hover:border-slate-500 px-3 py-1.5 rounded-lg transition-all"
-        >
-          Brand Settings
-        </button>
+      <div className="px-8 pt-8 pb-4">
+        <h1 className="text-xl font-semibold tracking-tight text-white">Lessons Learned</h1>
+        <p className="text-xs text-slate-500 mt-0.5">Draft Workspace — RUFIO</p>
       </div>
 
       {/* Continue banner */}
