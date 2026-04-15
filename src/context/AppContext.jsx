@@ -292,11 +292,17 @@ function reducer(state, action) {
 
 export function AppProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, null, () => {
+    const storageBrand = storage.getBrand()
+    const base = storageBrand ? { ...initialState, brand: storageBrand } : initialState
+
+    // If a draft seed was set from the Ideas board, start fresh with that text
+    const seed = storage.getDraftSeed()
+    if (seed) return { ...base, rawInput: seed }
+
     const session = loadSession()
     if (session) {
-      const merged = { ...initialState, ...session, isLoading: false, error: null, rssItems: [] }
+      const merged = { ...base, ...session, isLoading: false, error: null, rssItems: [] }
       // If the saved screen requires data that isn't present, fall back to HOME
-      // to prevent crashes on screens like QA (needs questions) or Draft (needs versions)
       const needsQuestions = [SCREENS.QA].includes(merged.screen)
       const needsDraft = [SCREENS.DRAFT, SCREENS.HEADLINES, SCREENS.FILTER].includes(merged.screen)
       if (needsQuestions && (!merged.questions || merged.questions.length === 0)) {
@@ -307,9 +313,7 @@ export function AppProvider({ children }) {
       }
       return merged
     }
-    // No session — start fresh but load brand from BrandSettings storage
-    const storageBrand = storage.getBrand()
-    return storageBrand ? { ...initialState, brand: storageBrand } : initialState
+    return base
   });
 
   // Keep storage brand in sync so BrandSettings reads the latest

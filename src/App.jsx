@@ -3,6 +3,7 @@ import BrandSettings from './components/BrandSettings'
 import Create from './components/Create'
 import Ideas from './components/Ideas'
 import ArchiveScreen from './screens/ArchiveScreen'
+import { storage } from './lib/storage'
 
 const NAV = [
   { id: 'create',   label: 'Create',         icon: '✍️' },
@@ -61,6 +62,11 @@ export default function App() {
     setSidebarOpen(false)
   }
 
+  function handleDraftFromIdea(text) {
+    storage.setDraftSeed(text)
+    setSection('create')
+  }
+
   return (
     // fixed inset-0 fills the exact visible viewport on iOS — avoids the 100vh URL-bar bug
     <div className="fixed inset-0 flex bg-[#0a1628] text-white">
@@ -108,7 +114,7 @@ export default function App() {
         {/* Section content */}
         <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
           {section === 'create'   && <Create />}
-          {section === 'ideas'    && <Ideas />}
+          {section === 'ideas'    && <Ideas onDraftFromIdea={handleDraftFromIdea} />}
           {section === 'archive'  && <ArchiveScreen />}
           {section === 'settings' && <BrandSettings />}
         </div>

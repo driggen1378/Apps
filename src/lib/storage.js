@@ -39,6 +39,13 @@ export const storage = {
     const existing = get('ll-archive', [])
     set('ll-archive', [{ id: Date.now(), ...entry }, ...existing])
   },
+  // Draft seed — set by Ideas when user clicks "Draft this →", consumed by AppContext on mount
+  getDraftSeed: () => {
+    const seed = localStorage.getItem('ll-draft-seed')
+    if (seed) localStorage.removeItem('ll-draft-seed')
+    return seed
+  },
+  setDraftSeed: (text) => localStorage.setItem('ll-draft-seed', text),
 }
 
 export const archiveStorage = {
