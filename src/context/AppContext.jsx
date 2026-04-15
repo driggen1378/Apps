@@ -16,6 +16,7 @@ export const SCREENS = {
   QUESTION_FORMATION: 'question_formation',
   TENSION_MAP: 'tension_map',
   ARCHIVE: 'archive',
+  IDEA_EXTRACTION: 'idea_extraction',
 };
 
 export const OUTPUT_TYPES = {

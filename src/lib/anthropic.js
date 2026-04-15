@@ -437,6 +437,87 @@ Return ONLY the JSON. No markdown fences. No commentary.`
   try { return parseJSON(text) } catch { return { headlines: [] } }
 }
 
+// ── Mosaic: gather raw source material ──────────────────────────────────────
+// Searches the web for what creators and articles in a territory are already
+// saying, so the user can react from their own experience rather than starting
+// from nothing. No pillars required — works from vague words and influences.
+
+export async function gatherMosaic(words, influences, brand) {
+  const wordsNote = words?.trim()
+    ? `The user is orbiting these words and themes: "${words.trim()}".`
+    : `Search broadly across the territory of personal development, identity, transitions, and meaningful work.`
+
+  const influencesNote = influences?.trim()
+    ? `Focus especially on what these creators, writers, and sources are saying: ${influences.trim()}. Also pull in others working in the same space.`
+    : `Search across popular creators, newsletters, and discussions in this space.`
+
+  const instruction = `${wordsNote} ${influencesNote}
+
+Search the internet for what's already being written, said, and argued in this territory. Include:
+- Articles, essays, newsletters, and podcast episodes from the creators listed above and others nearby
+- Reddit threads, forum discussions, and comment sections
+- Widely-shared takes and counterarguments
+
+For each piece you find, pull the specific angle or claim — not just the topic. What is the creator or article actually arguing? What's their belief, their challenge, their take? Be specific about the source.
+
+Return 6–8 tiles — a mosaic of raw source material from across the landscape. Mix types:
+- "creator_take": a specific claim a creator makes ("Austin Kleon argues that stealing ideas is not only ethical — it's how all creative work actually happens")
+- "article_angle": the specific angle a piece makes ("A piece in [outlet] argues that most productivity advice fails because...")
+- "conversation": what a thread or debate reveals ("On Reddit r/selfimprovement, people argue whether discipline is built or inherited")
+
+For each tile return:
+- type: "creator_take" | "article_angle" | "conversation"
+- source: who or where — specific (e.g., "Austin Kleon", "Cal Newport, Deep Work", "r/productivity thread")
+- headline: their specific angle in one plain sentence — the claim, not the topic
+- what_they_say: 2–3 sentences on their actual position — direct and specific, not vague
+- hook: a plain question that invites the user's reaction from their own life — "Do you see it this way?" or "Where did your experience go differently?"
+- url: URL if findable, null otherwise
+
+Return JSON:
+{
+  "tiles": [
+    {
+      "type": "string",
+      "source": "string",
+      "headline": "string",
+      "what_they_say": "string",
+      "hook": "string",
+      "url": null
+    }
+  ]
+}
+Return ONLY the JSON. No markdown fences. No commentary.`
+
+  const messages = [{ role: 'user', content: instruction }]
+  let response
+
+  for (let i = 0; i < 5; i++) {
+    response = await callAPI({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 2000,
+      temperature: 0.8,
+      system: buildSystemPrompt(brand),
+      tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+      messages,
+    })
+
+    if (response.stop_reason === 'end_turn') break
+
+    if (response.stop_reason === 'tool_use') {
+      messages.push({ role: 'assistant', content: response.content })
+      const toolResults = response.content
+        .filter(b => b.type === 'tool_use')
+        .map(b => ({ type: 'tool_result', tool_use_id: b.id, content: '' }))
+      messages.push({ role: 'user', content: toolResults })
+    } else {
+      break
+    }
+  }
+
+  const text = response.content.find(b => b.type === 'text')?.text || ''
+  try { return parseJSON(text) } catch { return { tiles: [] } }
+}
+
 // ── Filter check ──────────────────────────────────────────────────────────────
 
 export async function runFilterCheck(draft, outputType, brand) {
