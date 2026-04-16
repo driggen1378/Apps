@@ -442,61 +442,48 @@ Return ONLY the JSON. No markdown fences. No commentary.`
 // saying, so the user can react from their own experience rather than starting
 // from nothing. No pillars required — works from vague words and influences.
 
+// Minimal system prompt — the full newsletter/voice/format system prompt is
+// irrelevant here and burns ~1,600 tokens per call in the agentic loop.
+const MOSAIC_SYSTEM = `You are a research assistant. Search the web, find specific arguments and claims from real creators and publications, and return structured JSON. Report actual positions — not vague topic summaries. Be direct and specific about what each source is actually arguing.`
+
 export async function gatherMosaic(words, influences, brand) {
   const wordsNote = words?.trim()
     ? `The user is orbiting these words and themes: "${words.trim()}".`
-    : `Search broadly across the territory of personal development, identity, transitions, and meaningful work.`
+    : `Search broadly across personal development, identity, transitions, and meaningful work.`
 
   const influencesNote = influences?.trim()
-    ? `Focus especially on what these creators, writers, and sources are saying: ${influences.trim()}. Also pull in others working in the same space.`
+    ? `Focus on what these creators and sources are saying: ${influences.trim()}. Also pull others in the same space.`
     : `Search across popular creators, newsletters, and discussions in this space.`
 
   const instruction = `${wordsNote} ${influencesNote}
 
-Search the internet for what's already being written, said, and argued in this territory. Include:
-- Articles, essays, newsletters, and podcast episodes from the creators listed above and others nearby
-- Reddit threads, forum discussions, and comment sections
-- Widely-shared takes and counterarguments
+Search for what's already being written, said, and argued in this territory — articles, newsletters, podcast episodes, Reddit threads, forum discussions. For each piece, pull the specific angle or claim: what is the creator actually arguing? Not the topic — the take.
 
-For each piece you find, pull the specific angle or claim — not just the topic. What is the creator or article actually arguing? What's their belief, their challenge, their take? Be specific about the source.
+Return 6–8 tiles. Mix types:
+- "creator_take": a specific claim a creator makes
+- "article_angle": the specific angle a piece pushes
+- "conversation": what a thread or debate reveals
 
-Return 6–8 tiles — a mosaic of raw source material from across the landscape. Mix types:
-- "creator_take": a specific claim a creator makes ("Austin Kleon argues that stealing ideas is not only ethical — it's how all creative work actually happens")
-- "article_angle": the specific angle a piece makes ("A piece in [outlet] argues that most productivity advice fails because...")
-- "conversation": what a thread or debate reveals ("On Reddit r/selfimprovement, people argue whether discipline is built or inherited")
-
-For each tile return:
+For each tile:
 - type: "creator_take" | "article_angle" | "conversation"
-- source: who or where — specific (e.g., "Austin Kleon", "Cal Newport, Deep Work", "r/productivity thread")
+- source: specific (e.g., "Austin Kleon", "Cal Newport, Deep Work", "r/productivity thread")
 - headline: their specific angle in one plain sentence — the claim, not the topic
-- what_they_say: 2–3 sentences on their actual position — direct and specific, not vague
-- hook: a plain question that invites the user's reaction from their own life — "Do you see it this way?" or "Where did your experience go differently?"
+- what_they_say: 2–3 sentences on their actual position, direct and specific
+- hook: a plain question inviting the user's reaction from their own life
 - url: URL if findable, null otherwise
 
-Return JSON:
-{
-  "tiles": [
-    {
-      "type": "string",
-      "source": "string",
-      "headline": "string",
-      "what_they_say": "string",
-      "hook": "string",
-      "url": null
-    }
-  ]
-}
-Return ONLY the JSON. No markdown fences. No commentary.`
+Return JSON only — no markdown fences, no commentary:
+{"tiles":[{"type":"string","source":"string","headline":"string","what_they_say":"string","hook":"string","url":null}]}`
 
   const messages = [{ role: 'user', content: instruction }]
   let response
 
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 3; i++) {
     response = await callAPI({
       model: 'claude-sonnet-4-6',
-      max_tokens: 2000,
+      max_tokens: 1500,
       temperature: 0.8,
-      system: buildSystemPrompt(brand),
+      system: MOSAIC_SYSTEM,
       tools: [{ type: 'web_search_20250305', name: 'web_search' }],
       messages,
     })
