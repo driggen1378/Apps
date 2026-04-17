@@ -54,7 +54,7 @@ function SidebarNav({ section, onNavigate, onClose }) {
 }
 
 export default function App() {
-  const [section, setSection] = useState('create')
+  const [section, setSection] = useState('ideas')
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   function navigate(id) {

@@ -2,13 +2,50 @@ import { useState, useEffect } from 'react'
 import { storage } from '../lib/storage'
 import { fetchFeed } from '../lib/rss'
 
+const BUCKETS = [
+  {
+    id: 'past',
+    label: 'Past',
+    long: 'PAST',
+    sub: "Problems I've genuinely figured out",
+    dot: 'bg-green-500',
+    color: 'text-green-400',
+    activeBorder: 'border-green-600/60 bg-green-900/10 text-green-300',
+    cardBorder: 'border-green-900/30',
+    cardBg: 'bg-[#0d1a12]',
+  },
+  {
+    id: 'present',
+    label: 'Present',
+    long: 'PRESENT',
+    sub: "I'm actively wrestling with this",
+    dot: 'bg-amber-500',
+    color: 'text-amber-400',
+    activeBorder: 'border-amber-600/60 bg-amber-900/10 text-amber-300',
+    cardBorder: 'border-amber-900/30',
+    cardBg: 'bg-[#1a1500]',
+  },
+  {
+    id: 'lens',
+    label: 'Lens',
+    long: 'LENS',
+    sub: "My unique angle to investigate",
+    dot: 'bg-blue-500',
+    color: 'text-blue-400',
+    activeBorder: 'border-blue-600/60 bg-blue-900/10 text-blue-300',
+    cardBorder: 'border-blue-900/30',
+    cardBg: 'bg-[#0a1020]',
+  },
+]
+
 function ReflectionModal({ article, onSave, onClose }) {
   const [why, setWhy] = useState('')
   const [suggests, setSuggests] = useState('')
   const [disagree, setDisagree] = useState('')
+  const [bucket, setBucket] = useState('present')
 
   function handleSave() {
-    onSave(article, { why: why.trim(), suggests: suggests.trim(), disagree: disagree.trim() })
+    onSave(article, { why: why.trim(), suggests: suggests.trim(), disagree: disagree.trim() }, bucket)
   }
 
   return (
@@ -19,10 +56,30 @@ function ReflectionModal({ article, onSave, onClose }) {
           <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors text-lg leading-none">✕</button>
         </div>
 
-        <div className="px-6 py-5 flex flex-col gap-5">
+        <div className="px-6 py-5 flex flex-col gap-4">
           <p className="text-xs text-slate-500 leading-relaxed line-clamp-2">
             "{article.title}"
           </p>
+
+          {/* Bucket selector */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-medium text-slate-400">Which bucket?</label>
+            <div className="flex gap-2">
+              {BUCKETS.map(b => (
+                <button key={b.id} onClick={() => setBucket(b.id)}
+                  className={`flex-1 py-2 px-2 rounded-lg border text-xs font-medium transition-all text-left ${
+                    bucket === b.id ? b.activeBorder : 'border-[#2a2d3e] text-slate-500 hover:text-slate-300 hover:border-slate-500'
+                  }`}>
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                    <span className={`w-1.5 h-1.5 rounded-full ${b.dot}`} />
+                    {b.label}
+                  </div>
+                  <div className="text-slate-600 font-normal text-xs leading-tight">{b.sub}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-medium text-amber-400">Why did this grab you?</label>
             <textarea value={why} onChange={e => setWhy(e.target.value)}
@@ -44,7 +101,7 @@ function ReflectionModal({ article, onSave, onClose }) {
         </div>
 
         <div className="flex items-center justify-between px-6 py-4 border-t border-[#2a2d3e]">
-          <button onClick={onClose} className="text-sm text-slate-500 hover:text-slate-300 transition-colors">Skip</button>
+          <button onClick={onClose} className="text-sm text-slate-500 hover:text-slate-300 transition-colors">Cancel</button>
           <button onClick={handleSave}
             className="px-5 py-2 bg-white text-[#0f1117] text-sm font-semibold rounded-lg hover:bg-slate-100 transition-all">
             Save to Ideas Board →
@@ -67,6 +124,7 @@ export default function Ideas({ onDraftFromIdea }) {
   // Quick capture state
   const [captureText, setCaptureText] = useState('')
   const [captureSaved, setCaptureSaved] = useState(false)
+  const [bucket, setBucket] = useState('present')
 
   useEffect(() => { if (tab === 'feed') loadFeeds() }, [tab])
 
@@ -95,6 +153,7 @@ export default function Ideas({ onDraftFromIdea }) {
     const item = {
       id: Date.now(),
       type: 'capture',
+      bucket,
       title: text.slice(0, 80) + (text.length > 80 ? '…' : ''),
       text,
       source: 'Quick capture',
@@ -128,8 +187,8 @@ export default function Ideas({ onDraftFromIdea }) {
     }
   }
 
-  function handleReflectionSave(article, reflections) {
-    const item = { ...article, reflections }
+  function handleReflectionSave(article, reflections, bucketId) {
+    const item = { ...article, reflections, bucket: bucketId }
     const next = [item, ...board.filter(s => s.id !== article.id)]
     setBoard(next); storage.setBoard(next)
     setReflectionTarget(null)
@@ -152,7 +211,7 @@ export default function Ideas({ onDraftFromIdea }) {
 
   const TABS = [
     { id: 'capture', label: 'Capture' },
-    { id: 'board',   label: `Ideas Board (${board.length})` },
+    { id: 'board',   label: `Board (${board.length})` },
     { id: 'feed',    label: 'Feed' },
     { id: 'saved',   label: `Saved (${saved.length})` },
   ]
@@ -182,106 +241,168 @@ export default function Ideas({ onDraftFromIdea }) {
         )}
       </div>
 
-      {/* Capture tab */}
+      {/* ── Capture tab ──────────────────────────────────────────────────────── */}
       {tab === 'capture' && (
-        <div className="flex-1 flex flex-col px-6 py-6 max-w-2xl mx-auto w-full">
-          <p className="text-xs text-slate-500 mb-3">
-            Dump a raw idea, a phrase, a question, an observation. No editing. Just get it out.
-          </p>
+        <div className="flex-1 flex flex-col px-6 py-6 max-w-2xl mx-auto w-full gap-4">
+          <div>
+            <p className="text-sm text-white font-medium mb-0.5">What's rattling around?</p>
+            <p className="text-xs text-slate-500">
+              Dump it raw — a phrase, a question, an observation, a half-formed thing. No editing.
+            </p>
+          </div>
+
           <textarea
             value={captureText}
             onChange={e => setCaptureText(e.target.value)}
             onKeyDown={handleCaptureKey}
-            placeholder="What's rattling around in your head right now?"
-            rows={6}
+            placeholder="Type anything. You can sort it later."
+            rows={5}
             autoFocus
-            className="flex-1 w-full bg-[#141620] border border-[#2a2d3e] rounded-xl px-5 py-4 text-slate-200 placeholder-slate-600 text-base leading-relaxed resize-none focus:outline-none focus:border-[#4a4d6e] transition-colors"
+            className="w-full bg-[#141620] border border-[#2a2d3e] rounded-xl px-5 py-4 text-slate-200 placeholder-slate-600 text-base leading-relaxed resize-none focus:outline-none focus:border-[#4a4d6e] transition-colors"
           />
-          <div className="flex items-center justify-between mt-3">
+
+          {/* Bucket selector */}
+          <div className="flex flex-col gap-2">
+            <p className="text-xs text-slate-500">Which bucket does this belong to?</p>
+            <div className="flex gap-2">
+              {BUCKETS.map(b => (
+                <button key={b.id} onClick={() => setBucket(b.id)}
+                  className={`flex-1 py-2.5 px-3 rounded-xl border text-left transition-all ${
+                    bucket === b.id
+                      ? b.activeBorder
+                      : 'border-[#2a2d3e] text-slate-500 hover:text-slate-300 hover:border-slate-500'
+                  }`}>
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${b.dot}`} />
+                    <span className="text-xs font-semibold">{b.label}</span>
+                  </div>
+                  <p className="text-xs font-normal leading-snug opacity-70">{b.sub}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between">
             <span className="text-xs text-slate-600">Cmd+Enter to save</span>
             <button
               onClick={saveCapture}
               disabled={!captureText.trim()}
               className="px-5 py-2.5 bg-[#c5a028] text-[#071020] text-sm font-semibold rounded-lg hover:bg-[#d9b030] disabled:opacity-40 disabled:cursor-not-allowed transition-all"
             >
-              {captureSaved ? 'Saved ✓' : 'Save to board →'}
+              {captureSaved ? '✓ Saved' : 'Save →'}
             </button>
           </div>
-          {board.filter(i => i.type === 'capture').length > 0 && (
+
+          {board.length > 0 && (
             <button
               onClick={() => setTab('board')}
-              className="mt-4 text-xs text-[#6a80a0] hover:text-[#c5a028] transition-colors self-start"
+              className="text-xs text-[#6a80a0] hover:text-[#c5a028] transition-colors self-start"
             >
-              View ideas board ({board.length}) →
+              View board ({board.length}) →
             </button>
           )}
         </div>
       )}
 
-      {/* Board tab */}
+      {/* ── Board tab ────────────────────────────────────────────────────────── */}
       {tab === 'board' && (
         <div className="flex-1 overflow-y-auto px-6 py-5">
-          {board.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full gap-3 text-center">
-              <p className="text-[#4a6080] text-sm">Your ideas board is empty.</p>
-              <button onClick={() => setTab('capture')}
-                className="text-xs text-[#c5a028] hover:text-[#d9b030] transition-colors">
-                Capture your first idea →
-              </button>
+          <div className="max-w-2xl mx-auto">
+
+            {/* Why Me — pinned thesis */}
+            <div className="mb-6 bg-[#0f1117] border border-[#2a2d3e] rounded-xl px-5 py-4">
+              <p className="text-xs text-slate-600 font-mono uppercase tracking-wider mb-2">Why you</p>
+              <p className="text-sm text-white font-medium leading-relaxed">
+                What have I actually seen that my audience hasn't — and am I willing to say it plainly?
+              </p>
+              <p className="text-xs text-slate-400 mt-2 leading-relaxed">
+                My pattern recognition and my lens: how humans make decisions under pressure and within daily systems.
+              </p>
             </div>
-          ) : (
-            <ul className="space-y-3 max-w-3xl">
-              {board.map(item => (
-                <li key={item.id} className="bg-[#112040] border border-[#2a4070] rounded-lg p-4 hover:border-[#3a5080] transition-colors">
-                  <div className="flex items-start gap-3">
-                    <div className="flex-1 min-w-0">
-                      {item.type === 'capture' ? (
-                        <p className="text-white text-sm leading-relaxed whitespace-pre-wrap">{item.text}</p>
+
+            {board.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12 gap-3 text-center">
+                <p className="text-[#4a6080] text-sm">Your board is empty.</p>
+                <button onClick={() => setTab('capture')}
+                  className="text-xs text-[#c5a028] hover:text-[#d9b030] transition-colors">
+                  Capture your first idea →
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-8">
+                {BUCKETS.map(section => {
+                  const items = board.filter(i => (i.bucket || 'present') === section.id)
+                  return (
+                    <div key={section.id}>
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className={`w-2 h-2 rounded-full ${section.dot}`} />
+                        <span className={`text-xs font-mono font-bold tracking-widest uppercase ${section.color}`}>
+                          {section.long}
+                        </span>
+                        <span className="text-xs text-slate-600">— {section.sub}</span>
+                        <span className="text-xs text-slate-700 ml-auto">{items.length}</span>
+                      </div>
+
+                      {items.length === 0 ? (
+                        <p className="text-xs text-slate-700 pl-4 italic">Nothing here yet.</p>
                       ) : (
-                        <>
-                          <a href={item.link} target="_blank" rel="noopener noreferrer"
-                            className="text-white font-medium hover:text-[#c5a028] transition-colors line-clamp-2 block">
-                            {item.title}
-                          </a>
-                          {item.description && (
-                            <p className="text-[#6a80a0] text-sm mt-1 line-clamp-2">{item.description}</p>
-                          )}
-                          {item.reflections && (
-                            <div className="mt-2 flex flex-col gap-0.5">
-                              {item.reflections.why && <p className="text-xs text-slate-500"><span className="text-amber-400/70">Why:</span> {item.reflections.why}</p>}
-                              {item.reflections.suggests && <p className="text-xs text-slate-500"><span className="text-amber-400/70">Suggests:</span> {item.reflections.suggests}</p>}
-                              {item.reflections.disagree && <p className="text-xs text-slate-500"><span className="text-amber-400/70">Disagree:</span> {item.reflections.disagree}</p>}
-                            </div>
-                          )}
-                        </>
+                        <ul className="space-y-2">
+                          {items.map(item => (
+                            <li key={item.id}
+                              className={`border rounded-lg p-4 hover:border-opacity-60 transition-colors ${section.cardBorder} ${section.cardBg}`}>
+                              <div className="flex items-start gap-3">
+                                <div className="flex-1 min-w-0">
+                                  {item.type === 'capture' ? (
+                                    <p className="text-white text-sm leading-relaxed whitespace-pre-wrap">{item.text}</p>
+                                  ) : (
+                                    <>
+                                      <a href={item.link} target="_blank" rel="noopener noreferrer"
+                                        className="text-white font-medium hover:text-[#c5a028] transition-colors line-clamp-2 block">
+                                        {item.title}
+                                      </a>
+                                      {item.description && (
+                                        <p className="text-[#6a80a0] text-sm mt-1 line-clamp-2">{item.description}</p>
+                                      )}
+                                      {item.reflections && (
+                                        <div className="mt-2 flex flex-col gap-0.5">
+                                          {item.reflections.why && <p className="text-xs text-slate-500"><span className="text-amber-400/70">Why:</span> {item.reflections.why}</p>}
+                                          {item.reflections.suggests && <p className="text-xs text-slate-500"><span className="text-amber-400/70">Suggests:</span> {item.reflections.suggests}</p>}
+                                          {item.reflections.disagree && <p className="text-xs text-slate-500"><span className="text-amber-400/70">Disagree:</span> {item.reflections.disagree}</p>}
+                                        </div>
+                                      )}
+                                    </>
+                                  )}
+                                  <p className="text-[#4a6080] text-xs mt-2">{item.source || 'Quick capture'}</p>
+                                </div>
+                                <div className="flex flex-col gap-2 shrink-0 pt-0.5">
+                                  <button
+                                    onClick={() => draftFromItem(item)}
+                                    className="text-xs font-medium text-[#c5a028] hover:text-[#d9b030] border border-[#c5a028]/40 hover:border-[#c5a028] px-2 py-1 rounded transition-all whitespace-nowrap"
+                                  >
+                                    Draft →
+                                  </button>
+                                  <button
+                                    onClick={() => removeBoardItem(item.id)}
+                                    className="text-xs text-[#3a5080] hover:text-red-400 transition-colors text-center"
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
                       )}
-                      <p className="text-[#4a6080] text-xs mt-2">{item.source || 'Quick capture'}</p>
                     </div>
-                    <div className="flex flex-col gap-2 shrink-0 pt-0.5">
-                      <button
-                        onClick={() => draftFromItem(item)}
-                        title="Start a newsletter draft from this idea"
-                        className="text-xs font-medium text-[#c5a028] hover:text-[#d9b030] border border-[#c5a028]/40 hover:border-[#c5a028] px-2 py-1 rounded transition-all whitespace-nowrap"
-                      >
-                        Draft this →
-                      </button>
-                      <button
-                        onClick={() => removeBoardItem(item.id)}
-                        title="Remove from board"
-                        className="text-xs text-[#3a5080] hover:text-red-400 transition-colors text-center"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
+                  )
+                })}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
-      {/* Feed + Saved tabs */}
+      {/* ── Feed + Saved tabs ─────────────────────────────────────────────────── */}
       {(tab === 'feed' || tab === 'saved') && (
         <div className="flex-1 overflow-y-auto px-6 py-5">
           {loading && <p className="text-[#4a6080] py-8 text-center">Loading feeds…</p>}
