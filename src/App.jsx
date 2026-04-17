@@ -3,11 +3,13 @@ import BrandSettings from './components/BrandSettings'
 import Create from './components/Create'
 import Ideas from './components/Ideas'
 import ArchiveScreen from './screens/ArchiveScreen'
+import Roadmap from './components/Roadmap'
 import { storage } from './lib/storage'
 
 const NAV = [
   { id: 'create',   label: 'Create',         icon: '✍️' },
   { id: 'ideas',    label: 'Ideas',           icon: '💡' },
+  { id: 'roadmap',  label: 'Roadmap',         icon: '🗺️' },
   { id: 'archive',  label: 'Archive',         icon: '📁' },
   { id: 'settings', label: 'Brand Settings',  icon: '⚙️' },
 ]
@@ -115,6 +117,7 @@ export default function App() {
         <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
           {section === 'create'   && <Create />}
           {section === 'ideas'    && <Ideas onDraftFromIdea={handleDraftFromIdea} />}
+          {section === 'roadmap'  && <Roadmap />}
           {section === 'archive'  && <ArchiveScreen />}
           {section === 'settings' && <BrandSettings />}
         </div>

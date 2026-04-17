@@ -695,6 +695,70 @@ Return JSON only, no markdown fences:
   return parseJSON(response.content.find(b => b.type === 'text')?.text || '')
 }
 
+// ── Generate OKRs from plain-language roadmap ─────────────────────────────────
+
+export async function generateOKRs(prompt) {
+  const today = new Date().toISOString().slice(0, 10)
+
+  const instruction = `Convert this plain-language business plan into a structured OKR tree.
+
+Plan:
+${prompt}
+
+Rules:
+- 2–5 Objectives (high-level goals)
+- Each Objective: 2–4 Key Results (measurable outcomes)
+- Each Key Result: 1–3 Targets (specific tasks or milestones)
+- Spread dates realistically across the next 12 months from today (${today}) unless the plan specifies otherwise
+- Tags must come from: product, innovation, structuring, marketing, operations, finance, people, tech
+- Titles: concise, under 10 words
+- Descriptions: 1–2 sentences, specific and actionable
+
+Return JSON only:
+{
+  "objectives": [
+    {
+      "title": "string",
+      "description": "string",
+      "tags": ["string"],
+      "startDate": "YYYY-MM-DD",
+      "dueDate": "YYYY-MM-DD",
+      "keyResults": [
+        {
+          "title": "string",
+          "description": "string",
+          "tags": ["string"],
+          "startDate": "YYYY-MM-DD",
+          "dueDate": "YYYY-MM-DD",
+          "targets": [
+            {
+              "title": "string",
+              "description": "string",
+              "tags": ["string"],
+              "startDate": "YYYY-MM-DD",
+              "dueDate": "YYYY-MM-DD",
+              "priority": "high"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+Return ONLY the JSON. No markdown fences. No commentary.`
+
+  const response = await callAPI({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 3000,
+    temperature: 0.3,
+    system: 'You are an OKR planning assistant. Return only valid JSON with no other text.',
+    messages: [{ role: 'user', content: instruction }],
+  })
+
+  const text = response.content.find(b => b.type === 'text')?.text || ''
+  try { return parseJSON(text) } catch { return { objectives: [] } }
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function parseDraftResponse(text) {
