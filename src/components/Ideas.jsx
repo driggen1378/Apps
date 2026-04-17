@@ -244,10 +244,10 @@ export default function Ideas({ onDraftFromIdea }) {
       {/* ── Capture tab ──────────────────────────────────────────────────────── */}
       {tab === 'capture' && (
         <div className="flex-1 flex flex-col px-6 py-6 max-w-2xl mx-auto w-full gap-4">
-          <div>
-            <p className="text-sm text-white font-medium mb-0.5">What's rattling around?</p>
-            <p className="text-xs text-slate-500">
-              Dump it raw — a phrase, a question, an observation, a half-formed thing. No editing.
+          <div className="border-l-2 border-[#c5a028]/50 pl-4 py-0.5">
+            <p className="text-xs text-slate-600 font-mono uppercase tracking-wider mb-1">The filter</p>
+            <p className="text-sm text-slate-300 leading-snug">
+              What have I actually seen that my audience hasn't yet — and that I'm willing to say plainly?
             </p>
           </div>
 
@@ -308,17 +308,6 @@ export default function Ideas({ onDraftFromIdea }) {
       {tab === 'board' && (
         <div className="flex-1 overflow-y-auto px-6 py-5">
           <div className="max-w-2xl mx-auto">
-
-            {/* Why Me — pinned thesis */}
-            <div className="mb-6 bg-[#0f1117] border border-[#2a2d3e] rounded-xl px-5 py-4">
-              <p className="text-xs text-slate-600 font-mono uppercase tracking-wider mb-2">Why you</p>
-              <p className="text-sm text-white font-medium leading-relaxed">
-                What have I actually seen that my audience hasn't — and am I willing to say it plainly?
-              </p>
-              <p className="text-xs text-slate-400 mt-2 leading-relaxed">
-                My pattern recognition and my lens: how humans make decisions under pressure and within daily systems.
-              </p>
-            </div>
 
             {board.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 gap-3 text-center">
