@@ -198,18 +198,41 @@ export default function BoardTab({ roadmap }) {
   const [quarter, setQuarter] = useState(currentQuarter)
   const [year, setYear] = useState(currentYear)
   const [modal, setModal] = useState(null)
+  const [modalError, setModalError] = useState(null)
 
   function openCreate(type, parentId, parentLabel) {
     setModal({ type, item: null, parentId, parentLabel })
+    setModalError(null)
   }
   function openEdit(type, item) {
     setModal({ type, item, parentId: null, parentLabel: null })
+    setModalError(null)
   }
-  function closeModal() { setModal(null) }
+  function closeModal() { setModal(null); setModalError(null) }
+
+  const n = s => (s || '').trim().toLowerCase()
 
   function handleSave(formData) {
     if (!modal) return
     const { type, item, parentId } = modal
+    const title = formData.title?.trim() || ''
+
+    // Duplicate check on create only
+    if (!item) {
+      if (type === 'objective' && objectives.some(o => n(o.title) === n(title))) {
+        setModalError(`An objective named "${title}" already exists.`)
+        return
+      }
+      if (type === 'keyResult' && keyResults.some(kr => kr.objectiveId === parentId && n(kr.title) === n(title))) {
+        setModalError(`A key result named "${title}" already exists for this objective.`)
+        return
+      }
+      if (type === 'target' && targets.some(t => t.keyResultId === parentId && n(t.title) === n(title))) {
+        setModalError(`A target named "${title}" already exists for this key result.`)
+        return
+      }
+    }
+
     if (type === 'objective') {
       item ? updateObjective(item.id, formData) : addObjective(formData)
     } else if (type === 'keyResult') {
@@ -238,6 +261,7 @@ export default function BoardTab({ roadmap }) {
           parentLabel={modal.parentLabel}
           onSave={handleSave}
           onClose={closeModal}
+          error={modalError}
         />
       )}
 

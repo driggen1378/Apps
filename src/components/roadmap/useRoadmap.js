@@ -1,4 +1,4 @@
-import { useReducer, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 
 const KEY = 'roadmap-data'
 
@@ -20,7 +20,7 @@ function load() {
 }
 
 function itemProgress(t) {
-  if (t.total > 0) return Math.min((t.current || 0) / t.total, 1) * 100
+  if ((t.total || 0) > 0) return Math.min((t.current || 0) / t.total, 1) * 100
   return (t.completed || t.status === 'done') ? 100 : 0
 }
 
@@ -36,41 +36,35 @@ function recompute(data) {
     return { ...kr, progress: groupProgress(children) }
   })
   const objs = data.objectives.map(obj => {
-    const objKrIds = data.keyResults.filter(kr => kr.objectiveId === obj.id).map(kr => kr.id)
-    const allTargets = targets.filter(t => objKrIds.includes(t.keyResultId))
-    return { ...obj, progress: allTargets.length ? groupProgress(allTargets) : 0 }
+    const krIds = krs.filter(kr => kr.objectiveId === obj.id).map(kr => kr.id)
+    const all = targets.filter(t => krIds.includes(t.keyResultId))
+    return { ...obj, progress: all.length ? groupProgress(all) : 0 }
   })
-  return { ...data, targets, objectives: objs, keyResults: krs }
+  return { objectives: objs, keyResults: krs, targets }
 }
 
-// ── Reducer with undo history (keeps last 2 states) ───────────────────────────
-
-function reducer(state, action) {
-  if (action.type === 'mutate') {
-    const next = recompute(action.fn(state.data))
-    localStorage.setItem(KEY, JSON.stringify(next))
-    return { data: next, history: [...state.history.slice(-1), state.data] }
-  }
-  if (action.type === 'undo') {
-    if (!state.history.length) return state
-    const prev = state.history[state.history.length - 1]
-    localStorage.setItem(KEY, JSON.stringify(prev))
-    return { data: prev, history: state.history.slice(0, -1) }
-  }
-  return state
-}
-
-// ── Hook ──────────────────────────────────────────────────────────────────────
+const norm = s => (s || '').trim().toLowerCase()
 
 export function useRoadmap() {
-  const [state, dispatch] = useReducer(
-    reducer,
-    undefined,
-    () => ({ data: load(), history: [] })
-  )
+  // Single state object: { data, history }
+  const [state, setState] = useState(() => ({ data: load(), history: [] }))
 
-  const mutate = useCallback((fn) => dispatch({ type: 'mutate', fn }), [])
-  const undo   = useCallback(() => dispatch({ type: 'undo' }), [])
+  const mutate = useCallback((fn) => {
+    setState(prev => {
+      const next = recompute(fn(prev.data))
+      localStorage.setItem(KEY, JSON.stringify(next))
+      return { data: next, history: [...prev.history.slice(-1), prev.data] }
+    })
+  }, [])
+
+  const undo = useCallback(() => {
+    setState(prev => {
+      if (!prev.history.length) return prev
+      const d = prev.history[prev.history.length - 1]
+      localStorage.setItem(KEY, JSON.stringify(d))
+      return { data: d, history: prev.history.slice(0, -1) }
+    })
+  }, [])
 
   const { data } = state
 
@@ -93,6 +87,7 @@ export function useRoadmap() {
     mutate(d => {
       const krIds = d.keyResults.filter(kr => kr.objectiveId === id).map(kr => kr.id)
       return {
+        ...d,
         objectives: d.objectives.filter(o => o.id !== id),
         keyResults: d.keyResults.filter(kr => kr.objectiveId !== id),
         targets: d.targets.filter(t => !krIds.includes(t.keyResultId)),
@@ -157,7 +152,7 @@ export function useRoadmap() {
   function incrementTarget(id) {
     mutate(d => ({
       ...d,
-      targets: d.targets.map(t => t.id === id && t.total > 0
+      targets: d.targets.map(t => t.id === id && (t.total || 0) > 0
         ? { ...t, current: Math.min((t.current || 0) + 1, t.total) }
         : t
       ),
@@ -167,14 +162,14 @@ export function useRoadmap() {
   function decrementTarget(id) {
     mutate(d => ({
       ...d,
-      targets: d.targets.map(t => t.id === id && t.total > 0
+      targets: d.targets.map(t => t.id === id && (t.total || 0) > 0
         ? { ...t, current: Math.max((t.current || 0) - 1, 0) }
         : t
       ),
     }))
   }
 
-  // ── Bulk import from AI ──────────────────────────────────────────────────────
+  // ── Bulk import — deduplicates by title within scope ──────────────────────────
   function importOKRs(parsed) {
     mutate(d => {
       const objectives = [...d.objectives]
@@ -182,45 +177,56 @@ export function useRoadmap() {
       const targets = [...d.targets]
 
       for (const obj of parsed.objectives || []) {
-        const objId = genId('OBJ')
-        objectives.push({
-          id: objId, progress: 0,
-          title: obj.title || '',
-          description: obj.description || '',
-          tags: obj.tags || [],
-          startDate: obj.startDate || '',
-          dueDate: obj.dueDate || '',
-          createdAt: new Date().toISOString(),
-        })
-        for (const kr of obj.keyResults || []) {
-          const krId = genId('KR')
-          keyResults.push({
-            id: krId, objectiveId: objId, progress: 0,
-            title: kr.title || '',
-            description: kr.description || '',
-            tags: kr.tags || [],
-            startDate: kr.startDate || '',
-            dueDate: kr.dueDate || '',
+        const existing = objectives.find(o => norm(o.title) === norm(obj.title))
+        const objId = existing ? existing.id : genId('OBJ')
+        if (!existing) {
+          objectives.push({
+            id: objId, progress: 0,
+            title: obj.title || '',
+            description: obj.description || '',
+            tags: obj.tags || [],
+            startDate: obj.startDate || '',
+            dueDate: obj.dueDate || '',
             createdAt: new Date().toISOString(),
           })
-          for (const tgt of kr.targets || []) {
-            targets.push({
-              id: genId('TRG'), keyResultId: krId,
-              progress: 0, completed: false,
-              total: 0, current: 0,
-              title: tgt.title || '',
-              description: tgt.description || '',
-              tags: tgt.tags || [],
-              startDate: tgt.startDate || '',
-              dueDate: tgt.dueDate || '',
-              priority: tgt.priority || 'medium',
-              status: 'pending', track: 'on',
+        }
+
+        for (const kr of obj.keyResults || []) {
+          const existingKR = keyResults.find(k => k.objectiveId === objId && norm(k.title) === norm(kr.title))
+          const krId = existingKR ? existingKR.id : genId('KR')
+          if (!existingKR) {
+            keyResults.push({
+              id: krId, objectiveId: objId, progress: 0,
+              title: kr.title || '',
+              description: kr.description || '',
+              tags: kr.tags || [],
+              startDate: kr.startDate || '',
+              dueDate: kr.dueDate || '',
               createdAt: new Date().toISOString(),
             })
           }
+
+          for (const tgt of kr.targets || []) {
+            const existingTgt = targets.find(t => t.keyResultId === krId && norm(t.title) === norm(tgt.title))
+            if (!existingTgt) {
+              targets.push({
+                id: genId('TRG'), keyResultId: krId,
+                progress: 0, completed: false,
+                total: 0, current: 0,
+                title: tgt.title || '',
+                description: tgt.description || '',
+                tags: tgt.tags || [],
+                startDate: tgt.startDate || '',
+                dueDate: tgt.dueDate || '',
+                priority: tgt.priority || 'medium',
+                status: 'pending', track: 'on',
+                createdAt: new Date().toISOString(),
+              })
+            }
+          }
         }
       }
-      return { objectives, keyResults, targets }
+      return { ...d, objectives, keyResults, targets }
     })
   }
 

@@ -8,7 +8,7 @@ const BLANK = {
   total: 0, current: 0,
 }
 
-export default function ItemModal({ type, item, parentLabel, onSave, onClose }) {
+export default function ItemModal({ type, item, parentLabel, onSave, onClose, error }) {
   const [form, setForm] = useState(() => item ? { ...BLANK, ...item } : BLANK)
 
   const isTarget = type === 'target'
@@ -132,12 +132,17 @@ export default function ItemModal({ type, item, parentLabel, onSave, onClose }) 
           )}
         </div>
 
-        <div className="flex items-center justify-between px-6 py-4 border-t border-[#2a2d3e] shrink-0">
+        <div className="flex flex-col px-6 py-4 border-t border-[#2a2d3e] shrink-0 gap-3">
+          {error && (
+            <p className="text-xs text-red-400 bg-red-900/20 border border-red-800/40 rounded-lg px-3 py-2">{error}</p>
+          )}
+          <div className="flex items-center justify-between">
           <button onClick={onClose} className="text-sm text-slate-500 hover:text-slate-300 transition-colors">Cancel</button>
           <button onClick={handleSave} disabled={!form.title.trim()}
             className="px-5 py-2 bg-white text-[#0f1117] text-sm font-semibold rounded-lg hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all">
             {item ? 'Save changes' : `Add ${type}`} →
           </button>
+          </div>
         </div>
       </div>
     </div>
