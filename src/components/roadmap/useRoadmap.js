@@ -2,8 +2,10 @@ import { useReducer, useCallback } from 'react'
 
 const KEY = 'roadmap-data'
 
+let _seq = 0
 function genId(prefix) {
-  return `${prefix}-${Date.now().toString(36).toUpperCase().slice(-5)}`
+  _seq = (_seq + 1) % 10000
+  return `${prefix}-${Date.now().toString(36)}${_seq.toString(36).padStart(3, '0')}`.toUpperCase()
 }
 
 function empty() {
