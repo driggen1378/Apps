@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useReducer, useCallback } from 'react'
 
 const KEY = 'roadmap-data'
 
@@ -41,16 +41,36 @@ function recompute(data) {
   return { ...data, targets, objectives: objs, keyResults: krs }
 }
 
-export function useRoadmap() {
-  const [data, setData] = useState(load)
+// ── Reducer with undo history (keeps last 2 states) ───────────────────────────
 
-  const mutate = useCallback((fn) => {
-    setData(prev => {
-      const next = recompute(fn(prev))
-      localStorage.setItem(KEY, JSON.stringify(next))
-      return next
-    })
-  }, [])
+function reducer(state, action) {
+  if (action.type === 'mutate') {
+    const next = recompute(action.fn(state.data))
+    localStorage.setItem(KEY, JSON.stringify(next))
+    return { data: next, history: [...state.history.slice(-1), state.data] }
+  }
+  if (action.type === 'undo') {
+    if (!state.history.length) return state
+    const prev = state.history[state.history.length - 1]
+    localStorage.setItem(KEY, JSON.stringify(prev))
+    return { data: prev, history: state.history.slice(0, -1) }
+  }
+  return state
+}
+
+// ── Hook ──────────────────────────────────────────────────────────────────────
+
+export function useRoadmap() {
+  const [state, dispatch] = useReducer(
+    reducer,
+    undefined,
+    () => ({ data: load(), history: [] })
+  )
+
+  const mutate = useCallback((fn) => dispatch({ type: 'mutate', fn }), [])
+  const undo   = useCallback(() => dispatch({ type: 'undo' }), [])
+
+  const { data } = state
 
   // ── Objectives ──────────────────────────────────────────────────────────────
   function addObjective(fields) {
@@ -204,6 +224,8 @@ export function useRoadmap() {
 
   return {
     ...data,
+    canUndo: state.history.length > 0,
+    undo,
     addObjective, updateObjective, deleteObjective,
     addKeyResult, updateKeyResult, deleteKeyResult,
     addTarget, updateTarget, deleteTarget, toggleTarget, incrementTarget, decrementTarget,
