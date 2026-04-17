@@ -5,6 +5,7 @@ const BLANK = {
   title: '', description: '', tags: [],
   startDate: '', dueDate: '',
   priority: 'medium', status: 'pending', track: 'on',
+  total: 0, current: 0,
 }
 
 export default function ItemModal({ type, item, parentLabel, onSave, onClose }) {
@@ -87,6 +88,17 @@ export default function ItemModal({ type, item, parentLabel, onSave, onClose }) 
 
           {/* Target-only fields */}
           {isTarget && (
+            <>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs text-slate-400 font-medium">
+                Count goal <span className="text-slate-600 font-normal">(leave 0 for checkbox)</span>
+              </label>
+              <input type="number" min="0" step="1"
+                value={form.total || ''}
+                onChange={e => set('total', parseInt(e.target.value, 10) || 0)}
+                placeholder="e.g. 12 for &quot;X of 12&quot;"
+                className="bg-[#0f1117] border border-[#2a2d3e] rounded-lg px-3 py-2.5 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-[#4a4d6e] transition-colors" />
+            </div>
             <div className="grid grid-cols-3 gap-3">
               <div className="flex flex-col gap-1.5">
                 <label className="text-xs text-slate-400 font-medium">Priority</label>
@@ -116,6 +128,7 @@ export default function ItemModal({ type, item, parentLabel, onSave, onClose }) 
                 </select>
               </div>
             </div>
+            </>
           )}
         </div>
 

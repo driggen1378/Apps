@@ -17,25 +17,28 @@ function load() {
   } catch { return empty() }
 }
 
-function calcProgress(items) {
+function itemProgress(t) {
+  if (t.total > 0) return Math.min((t.current || 0) / t.total, 1) * 100
+  return (t.completed || t.status === 'done') ? 100 : 0
+}
+
+function groupProgress(items) {
   if (!items.length) return 0
-  const done = items.filter(i => i.completed || i.status === 'done').length
-  return Math.round((done / items.length) * 100)
+  return Math.round(items.reduce((s, i) => s + itemProgress(i), 0) / items.length)
 }
 
 function recompute(data) {
+  const targets = data.targets.map(t => ({ ...t, progress: Math.round(itemProgress(t)) }))
   const krs = data.keyResults.map(kr => {
-    const children = data.targets.filter(t => t.keyResultId === kr.id)
-    return { ...kr, progress: calcProgress(children) }
+    const children = targets.filter(t => t.keyResultId === kr.id)
+    return { ...kr, progress: groupProgress(children) }
   })
   const objs = data.objectives.map(obj => {
-    const children = krs.filter(kr => kr.objectiveId === obj.id)
-    const progress = children.length
-      ? Math.round(children.reduce((s, kr) => s + kr.progress, 0) / children.length)
-      : 0
-    return { ...obj, progress }
+    const objKrIds = data.keyResults.filter(kr => kr.objectiveId === obj.id).map(kr => kr.id)
+    const allTargets = targets.filter(t => objKrIds.includes(t.keyResultId))
+    return { ...obj, progress: allTargets.length ? groupProgress(allTargets) : 0 }
   })
-  return { ...data, objectives: objs, keyResults: krs }
+  return { ...data, targets, objectives: objs, keyResults: krs }
 }
 
 export function useRoadmap() {
@@ -104,6 +107,7 @@ export function useRoadmap() {
       ...d,
       targets: [...d.targets, {
         id: genId('TRG'), progress: 0, completed: false,
+        total: 0, current: 0,
         status: 'pending', priority: 'medium', track: 'on',
         createdAt: new Date().toISOString(), ...fields,
       }],
@@ -123,6 +127,26 @@ export function useRoadmap() {
       ...d,
       targets: d.targets.map(t => t.id === id
         ? { ...t, completed: !t.completed, status: t.completed ? 'pending' : 'done' }
+        : t
+      ),
+    }))
+  }
+
+  function incrementTarget(id) {
+    mutate(d => ({
+      ...d,
+      targets: d.targets.map(t => t.id === id && t.total > 0
+        ? { ...t, current: Math.min((t.current || 0) + 1, t.total) }
+        : t
+      ),
+    }))
+  }
+
+  function decrementTarget(id) {
+    mutate(d => ({
+      ...d,
+      targets: d.targets.map(t => t.id === id && t.total > 0
+        ? { ...t, current: Math.max((t.current || 0) - 1, 0) }
         : t
       ),
     }))
@@ -161,6 +185,7 @@ export function useRoadmap() {
             targets.push({
               id: genId('TRG'), keyResultId: krId,
               progress: 0, completed: false,
+              total: 0, current: 0,
               title: tgt.title || '',
               description: tgt.description || '',
               tags: tgt.tags || [],
@@ -181,7 +206,7 @@ export function useRoadmap() {
     ...data,
     addObjective, updateObjective, deleteObjective,
     addKeyResult, updateKeyResult, deleteKeyResult,
-    addTarget, updateTarget, deleteTarget, toggleTarget,
+    addTarget, updateTarget, deleteTarget, toggleTarget, incrementTarget, decrementTarget,
     importOKRs,
   }
 }
