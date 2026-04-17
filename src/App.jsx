@@ -4,9 +4,11 @@ import Create from './components/Create'
 import Ideas from './components/Ideas'
 import ArchiveScreen from './screens/ArchiveScreen'
 import Roadmap from './components/Roadmap'
+import WeeklyScreen from './screens/WeeklyScreen'
 import { storage } from './lib/storage'
 
 const NAV = [
+  { id: 'weekly',   label: 'Weekly',         icon: '📅' },
   { id: 'create',   label: 'Create',         icon: '✍️' },
   { id: 'ideas',    label: 'Ideas',           icon: '💡' },
   { id: 'roadmap',  label: 'Roadmap',         icon: '🗺️' },
@@ -56,7 +58,7 @@ function SidebarNav({ section, onNavigate, onClose }) {
 }
 
 export default function App() {
-  const [section, setSection] = useState('ideas')
+  const [section, setSection] = useState('weekly')
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   function navigate(id) {
@@ -115,6 +117,7 @@ export default function App() {
 
         {/* Section content */}
         <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+          {section === 'weekly'   && <WeeklyScreen onNavigate={navigate} />}
           {section === 'create'   && <Create />}
           {section === 'ideas'    && <Ideas onDraftFromIdea={handleDraftFromIdea} />}
           {section === 'roadmap'  && <Roadmap />}
