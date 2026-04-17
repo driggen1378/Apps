@@ -25,6 +25,59 @@ export const DEFAULT_BRAND = {
   rssFeeds: [],
 }
 
+export const DEFAULT_SCHEDULE = {
+  title: 'Mikel Media System',
+  days: [
+    {
+      name: 'Question Day',
+      timeEst: '~1 hr',
+      tasks: [
+        { text: 'Pick one honest question', nav: 'ideas' },
+        { text: 'Pressure-test: would this come up in real conversation? Useful in real life?' },
+        { text: 'Sketch core claim, tensions, examples, takeaway', nav: 'ideas' },
+      ],
+    },
+    {
+      name: 'Writing Day',
+      timeEst: '~2–3 hrs',
+      tasks: [
+        { text: 'Draft newsletter from the question', nav: 'create' },
+        { text: 'Cut to length, lock voice' },
+        { text: 'Schedule for publish day' },
+      ],
+    },
+    {
+      name: 'Recording Day',
+      timeEst: '~2–3 hrs',
+      tasks: [
+        { text: 'Confirm guest / prep solo' },
+        { text: 'Build speaking outline from the newsletter (not a full script)', nav: 'create' },
+        { text: 'Record episode' },
+      ],
+    },
+    {
+      name: 'Edit Day',
+      timeEst: '~3–4 hrs',
+      tasks: [
+        { text: 'Edit long-form first' },
+        { text: 'Pull 3–7 clips: tension, reframe, surprise, usefulness' },
+        { text: 'Title with searchable specifics (guest name + concrete topic)' },
+      ],
+    },
+    {
+      name: 'Publish Day',
+      timeEst: '~1–2 hrs',
+      tasks: [
+        { text: 'Send newsletter', nav: 'create' },
+        { text: 'Publish episode' },
+        { text: 'Distribute clips' },
+        { text: 'Reply to feedback' },
+      ],
+    },
+  ],
+  captureTask: { text: "Capture seed for next week's question", nav: 'ideas' },
+}
+
 export const storage = {
   getBrand: () => get('ll-brand', DEFAULT_BRAND),
   setBrand: v  => set('ll-brand', v),
@@ -39,13 +92,16 @@ export const storage = {
     const existing = get('ll-archive', [])
     set('ll-archive', [{ id: Date.now(), ...entry }, ...existing])
   },
-  // Draft seed — set by Ideas when user clicks "Draft this →", consumed by AppContext on mount
   getDraftSeed: () => {
     const seed = localStorage.getItem('ll-draft-seed')
     if (seed) localStorage.removeItem('ll-draft-seed')
     return seed
   },
   setDraftSeed: (text) => localStorage.setItem('ll-draft-seed', text),
+  getSchedule:     () => get('ll-weekly-schedule', DEFAULT_SCHEDULE),
+  setSchedule:     v  => set('ll-weekly-schedule', v),
+  getWeekProgress: () => get('ll-weekly-progress', {}),
+  setWeekProgress: v  => set('ll-weekly-progress', v),
 }
 
 export const archiveStorage = {
