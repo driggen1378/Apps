@@ -22,7 +22,6 @@ export const DEFAULT_BRAND = {
     { name: 'Ryan Holiday', handle: '@RyanHoliday', topic: 'Stoicism/writing' },
     { name: 'James Clear',  handle: '@JamesClear',  topic: 'Habits/clarity'   },
   ],
-  rssFeeds: [],
 }
 
 export const DEFAULT_SCHEDULE = {
@@ -81,8 +80,6 @@ export const DEFAULT_SCHEDULE = {
 export const storage = {
   getBrand: () => get('ll-brand', DEFAULT_BRAND),
   setBrand: v  => set('ll-brand', v),
-  getSaved: () => get('ll-saved', []),
-  setSaved: v  => set('ll-saved', v),
   getBoard: () => get('ll-board', []),
   setBoard: v  => set('ll-board', v),
   getKey:   () => localStorage.getItem('ll-api-key') || '',

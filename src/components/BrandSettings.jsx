@@ -43,7 +43,6 @@ export default function BrandSettings() {
   const [showKey, setShowKey] = useState(false)
   const [saved, setSaved]   = useState(false)
   const [newPillar, setNewPillar] = useState('')
-  const [newFeed,   setNewFeed]   = useState('')
   const [newInf, setNewInf] = useState({ name: '', handle: '', topic: '' })
   const [sched, setSched] = useState(() => scheduleToForm(storage.getSchedule()))
 
@@ -70,11 +69,6 @@ export default function BrandSettings() {
     if (!newPillar.trim()) return
     upd('pillars', [...(brand.pillars || []), newPillar.trim()])
     setNewPillar('')
-  }
-  function addFeed() {
-    if (!newFeed.trim()) return
-    upd('rssFeeds', [...(brand.rssFeeds || []), newFeed.trim()])
-    setNewFeed('')
   }
   function addInfluence() {
     if (!newInf.name.trim()) return
@@ -162,24 +156,6 @@ export default function BrandSettings() {
             ))}
           </div>
           <button onClick={addInfluence} className={BTN_GHOST}>+ Add influence</button>
-        </Section>
-
-        <Section title="RSS Feeds">
-          <ul className="space-y-2 mb-3">
-            {(brand.rssFeeds || []).map((url, i) => (
-              <li key={i} className="flex items-center gap-3 bg-[#1a3060] border border-[#2a4070] rounded px-4 py-2 text-sm">
-                <span className="text-[#8a9db5] flex-1 truncate">{url}</span>
-                <button onClick={() => upd('rssFeeds', brand.rssFeeds.filter((_, j) => j !== i))}
-                  className="text-[#6a80a0] hover:text-red-400 text-xs shrink-0">✕</button>
-              </li>
-            ))}
-          </ul>
-          <div className="flex gap-2">
-            <input value={newFeed} onChange={e => setNewFeed(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && addFeed()}
-              placeholder="https://..." className={INPUT} />
-            <button onClick={addFeed} className={BTN_GOLD}>Add</button>
-          </div>
         </Section>
 
         <Section title="Weekly System">

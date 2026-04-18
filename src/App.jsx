@@ -9,8 +9,8 @@ import { storage } from './lib/storage'
 
 const NAV = [
   { id: 'weekly',   label: 'Weekly',         icon: '📅' },
-  { id: 'create',   label: 'Create',         icon: '✍️' },
   { id: 'ideas',    label: 'Ideas',           icon: '💡' },
+  { id: 'create',   label: 'Create',         icon: '✍️' },
   { id: 'roadmap',  label: 'Roadmap',         icon: '🗺️' },
   { id: 'archive',  label: 'Archive',         icon: '📁' },
   { id: 'settings', label: 'Brand Settings',  icon: '⚙️' },
