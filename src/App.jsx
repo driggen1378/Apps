@@ -1,19 +1,22 @@
 import { useState } from 'react'
+import AuthGate from './components/AuthGate'
 import BrandSettings from './components/BrandSettings'
 import Create from './components/Create'
 import Ideas from './components/Ideas'
 import ArchiveScreen from './screens/ArchiveScreen'
 import Roadmap from './components/Roadmap'
 import WeeklyScreen from './screens/WeeklyScreen'
+import NewsletterScreen from './screens/NewsletterScreen'
 import { storage } from './lib/storage'
 
 const NAV = [
-  { id: 'weekly',   label: 'Weekly',         icon: '📅' },
-  { id: 'create',   label: 'Create',         icon: '✍️' },
-  { id: 'ideas',    label: 'Ideas',           icon: '💡' },
-  { id: 'roadmap',  label: 'Roadmap',         icon: '🗺️' },
-  { id: 'archive',  label: 'Archive',         icon: '📁' },
-  { id: 'settings', label: 'Brand Settings',  icon: '⚙️' },
+  { id: 'weekly',     label: 'Weekly',        icon: '📅' },
+  { id: 'ideas',      label: 'Ideas',          icon: '💡' },
+  { id: 'newsletter', label: 'Newsletter',     icon: '✉️' },
+  { id: 'create',     label: 'Create',         icon: '✍️' },
+  { id: 'roadmap',    label: 'Roadmap',        icon: '🗺️' },
+  { id: 'archive',    label: 'Archive',        icon: '📁' },
+  { id: 'settings',   label: 'Brand Settings', icon: '⚙️' },
 ]
 
 function SidebarNav({ section, onNavigate, onClose }) {
@@ -58,6 +61,10 @@ function SidebarNav({ section, onNavigate, onClose }) {
 }
 
 export default function App() {
+  return <AuthGate><AppInner /></AuthGate>
+}
+
+function AppInner() {
   const [section, setSection] = useState('weekly')
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
@@ -117,12 +124,13 @@ export default function App() {
 
         {/* Section content */}
         <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
-          {section === 'weekly'   && <WeeklyScreen onNavigate={navigate} />}
-          {section === 'create'   && <Create />}
-          {section === 'ideas'    && <Ideas onDraftFromIdea={handleDraftFromIdea} />}
-          {section === 'roadmap'  && <Roadmap />}
-          {section === 'archive'  && <ArchiveScreen />}
-          {section === 'settings' && <BrandSettings />}
+          {section === 'weekly'     && <WeeklyScreen onNavigate={navigate} />}
+          {section === 'ideas'      && <Ideas onDraftFromIdea={handleDraftFromIdea} />}
+          {section === 'newsletter' && <NewsletterScreen />}
+          {section === 'create'     && <Create />}
+          {section === 'roadmap'    && <Roadmap />}
+          {section === 'archive'    && <ArchiveScreen />}
+          {section === 'settings'   && <BrandSettings />}
         </div>
 
       </main>
