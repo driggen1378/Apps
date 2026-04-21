@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { reviseDraft, generateSpeakingOutline, fillInPlaceholder } from '../lib/anthropic';
+import { storage } from '../lib/storage';
 
 function extractPlaceholders(text) {
   const regex = /\[FILL IN:[^\]]+\]/g;
@@ -19,6 +20,7 @@ export default function DraftScreen() {
   const [activePh, setActivePh] = useState(null);
   const [phInput, setPhInput] = useState('');
   const [phLoading, setPhLoading] = useState(false);
+  const [savedToDrafts, setSavedToDrafts] = useState(false);
 
   // Guard: if no draft exists (bad session restore), render nothing
   if (!currentDraft) return null;
@@ -239,7 +241,22 @@ export default function DraftScreen() {
           )}
 
           <div className="flex items-center justify-between px-6 py-3 border-t border-[#1e2130]">
-            <div />
+            <button
+              onClick={() => {
+                storage.saveDraft({
+                  id:         Date.now(),
+                  title:      state.rawInput?.slice(0, 80) || 'Draft',
+                  content:    draft,
+                  wordCount,
+                  outputType: state.outputType,
+                })
+                setSavedToDrafts(true)
+                setTimeout(() => setSavedToDrafts(false), 2000)
+              }}
+              className="text-xs text-slate-500 hover:text-slate-300 border border-[#2a2d3e] hover:border-slate-500 px-3 py-1.5 rounded-lg transition-all"
+            >
+              {savedToDrafts ? '✓ Saved to Drafts' : 'Save to Drafts'}
+            </button>
             <button onClick={() => dispatch({ type: 'SET_SCREEN', screen: SCREENS.FILTER })}
               className="text-sm text-slate-300 hover:text-white border border-[#2a2d3e] hover:border-slate-500 px-4 py-1.5 rounded-lg transition-all">
               Run filter check →

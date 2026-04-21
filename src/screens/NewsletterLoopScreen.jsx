@@ -53,6 +53,14 @@ export default function NewsletterLoopScreen({ seed }) {
         framework,
         brand,
       })
+      // Auto-save to Drafts tab
+      storage.saveDraft({
+        id:         Date.now(),
+        title:      topic.trim(),
+        content:    result.draft,
+        wordCount:  result.wordCount,
+        outputType: 'newsletter',
+      })
       dispatch({ type: 'SET_OUTPUT_TYPE',   value: 'newsletter' })
       dispatch({ type: 'ADD_DRAFT_VERSION', draft: result.draft, wordCount: result.wordCount })
       dispatch({ type: 'SET_SCREEN',        screen: SCREENS.DRAFT })

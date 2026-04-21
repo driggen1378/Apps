@@ -11,6 +11,7 @@ const SYNC_KEYS = [
   'll-weekly-schedule',
   'll-weekly-progress',
   'll-archive',
+  'll-drafts',
   'll-api-key',
   'roadmap-data',
 ]
