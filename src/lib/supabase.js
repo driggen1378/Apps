@@ -5,7 +5,6 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
 
-// Keys that sync across devices
 const SYNC_KEYS = [
   'll-brand',
   'll-board',
@@ -30,28 +29,32 @@ export async function pushToCloud(key) {
   } catch (_) {}
 }
 
-// Pull all keys from Supabase into localStorage. Returns true if data existed.
+// Pull all keys from Supabase into localStorage.
+// Returns the array of keys that existed in the cloud.
 export async function pullFromCloud() {
   try {
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return false
+    if (!user) return []
     const { data } = await supabase
       .from('user_data')
       .select('key, value')
       .eq('user_id', user.id)
-    if (!data?.length) return false
+    if (!data?.length) return []
     for (const row of data) {
       if (row.value !== null) localStorage.setItem(row.key, row.value)
     }
-    return true
+    return data.map(r => r.key)
   } catch (_) {
-    return false
+    return []
   }
 }
 
-// Push all sync keys at once (used on first login to migrate existing local data)
-export async function pushAllToCloud() {
+// Push any SYNC_KEYS that exist locally but are missing from the cloud.
+// This handles migration when new keys are added to SYNC_KEYS after first login.
+export async function pushMissingToCloud(cloudKeys) {
   for (const key of SYNC_KEYS) {
-    await pushToCloud(key)
+    if (!cloudKeys.includes(key) && localStorage.getItem(key) !== null) {
+      await pushToCloud(key)
+    }
   }
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { supabase, pullFromCloud, pushAllToCloud } from '../lib/supabase'
+import { supabase, pullFromCloud, pushMissingToCloud } from '../lib/supabase'
 
 export default function AuthGate({ children }) {
   const [user,  setUser]  = useState(null)
@@ -9,8 +9,8 @@ export default function AuthGate({ children }) {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session) {
         setUser(session.user)
-        const hadData = await pullFromCloud()
-        if (!hadData) await pushAllToCloud()
+        const cloudKeys = await pullFromCloud()
+        await pushMissingToCloud(cloudKeys)
       }
       setReady(true)
     })
@@ -18,8 +18,8 @@ export default function AuthGate({ children }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session) {
         setUser(session.user)
-        const hadData = await pullFromCloud()
-        if (!hadData) await pushAllToCloud()
+        const cloudKeys = await pullFromCloud()
+        await pushMissingToCloud(cloudKeys)
         setReady(true)
       } else if (event === 'SIGNED_OUT') {
         setUser(null)
