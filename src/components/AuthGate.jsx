@@ -7,22 +7,26 @@ export default function AuthGate({ children }) {
 
   useEffect(() => {
     supabase.auth.getSession()
-      .then(async ({ data: { session } }) => {
+      .then(({ data: { session } }) => {
         if (session) {
           setUser(session.user)
-          const cloudKeys = await pullFromCloud()
-          pushMissingToCloud(cloudKeys) // fire and forget — don't block app open
+          // sync in background — never block setReady
+          pullFromCloud()
+            .then(cloudKeys => pushMissingToCloud(cloudKeys))
+            .catch(() => {})
         }
       })
       .catch(() => {})
       .finally(() => setReady(true)) // always open the app, even if sync fails
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session) {
         setUser(session.user)
-        const cloudKeys = await pullFromCloud()
-        pushMissingToCloud(cloudKeys) // fire and forget
         setReady(true)
+        // sync in background — never block app open
+        pullFromCloud()
+          .then(cloudKeys => pushMissingToCloud(cloudKeys))
+          .catch(() => {})
       } else if (event === 'SIGNED_OUT') {
         setUser(null)
       }
