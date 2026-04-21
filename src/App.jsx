@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import AuthGate from './components/AuthGate'
 import BrandSettings from './components/BrandSettings'
 import Create from './components/Create'
 import Ideas from './components/Ideas'
@@ -58,6 +59,10 @@ function SidebarNav({ section, onNavigate, onClose }) {
 }
 
 export default function App() {
+  return <AuthGate><AppInner /></AuthGate>
+}
+
+function AppInner() {
   const [section, setSection] = useState('weekly')
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
