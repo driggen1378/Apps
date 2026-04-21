@@ -695,6 +695,120 @@ Return JSON only, no markdown fences:
   return parseJSON(response.content.find(b => b.type === 'text')?.text || '')
 }
 
+// ── Generate article skeleton from pipeline answers ───────────────────────────
+
+export async function generateSkeleton(pipeline, brand) {
+  const instruction = `You are building an article skeleton. Do not write any prose.
+
+TITLE (the one plain question): ${pipeline.q2}
+
+Q4 — What most people think and why it's insufficient:
+${pipeline.q4}
+
+Q5 — What the author's lens reveals:
+${pipeline.q5}
+
+Q6 — The cost, limit, or warning:
+${pipeline.q6}
+
+Q7 — What the reader can do differently:
+${pipeline.q7}
+
+Generate ONLY:
+1. Four short section headings (4–7 words each) that introduce each answer without summarizing it — the heading frames the question, not the answer
+2. Two to four bracketed writing prompts per section — directives like [expand with a specific example], [describe what this looks like in practice], [share a personal experience here], [name the scenario where this matters most]
+
+Return valid JSON only, no markdown, no other text:
+{"sections":[{"heading":"string","prompts":["[string]","[string]"]},{"heading":"string","prompts":["[string]","[string]"]},{"heading":"string","prompts":["[string]","[string]"]},{"heading":"string","prompts":["[string]","[string]"]}]}`
+
+  const response = await callAPI({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 700,
+    temperature: 0.7,
+    messages: [{ role: 'user', content: instruction }],
+  })
+
+  const text = response.content.find(b => b.type === 'text')?.text || ''
+  const json = parseJSON(text)
+  const answers = [pipeline.q4, pipeline.q5, pipeline.q6, pipeline.q7]
+
+  return [
+    `# ${pipeline.q2}`,
+    '',
+    ...json.sections.flatMap((s, i) => [
+      `## ${s.heading}`,
+      answers[i],
+      '',
+      ...s.prompts,
+      '',
+    ]),
+  ].join('\n')
+}
+
+// ── Generate OKRs from plain-language roadmap ─────────────────────────────────
+
+export async function generateOKRs(prompt) {
+  const today = new Date().toISOString().slice(0, 10)
+
+  const instruction = `Convert this plain-language business plan into a structured OKR tree.
+
+Plan:
+${prompt}
+
+Rules:
+- 2–5 Objectives (high-level goals)
+- Each Objective: 2–4 Key Results (measurable outcomes)
+- Each Key Result: 1–3 Targets (specific tasks or milestones)
+- Spread dates realistically across the next 12 months from today (${today}) unless the plan specifies otherwise
+- Tags must come from: product, innovation, structuring, marketing, operations, finance, people, tech
+- Titles: concise, under 10 words
+- Descriptions: 1–2 sentences, specific and actionable
+
+Return JSON only:
+{
+  "objectives": [
+    {
+      "title": "string",
+      "description": "string",
+      "tags": ["string"],
+      "startDate": "YYYY-MM-DD",
+      "dueDate": "YYYY-MM-DD",
+      "keyResults": [
+        {
+          "title": "string",
+          "description": "string",
+          "tags": ["string"],
+          "startDate": "YYYY-MM-DD",
+          "dueDate": "YYYY-MM-DD",
+          "targets": [
+            {
+              "title": "string",
+              "description": "string",
+              "tags": ["string"],
+              "startDate": "YYYY-MM-DD",
+              "dueDate": "YYYY-MM-DD",
+              "priority": "high"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+Return ONLY the JSON. No markdown fences. No commentary.`
+
+  const response = await callAPI({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 3000,
+    temperature: 0.3,
+    system: 'You are an OKR planning assistant. Return only valid JSON with no other text.',
+    messages: [{ role: 'user', content: instruction }],
+  })
+
+  const text = response.content.find(b => b.type === 'text')?.text || ''
+  try { return parseJSON(text) } catch { return { objectives: [] } }
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function parseDraftResponse(text) {

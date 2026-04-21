@@ -20,6 +20,62 @@ function todayIndex() {
 
 const NAV_LABELS = { ideas: 'Ideas', create: 'Create', roadmap: 'Roadmap', archive: 'Archive' }
 
+// ── Daily learning capture ─────────────────────────────────────────────────────
+
+function DailyCapture() {
+  const [text, setText] = useState('')
+  const [saved, setSaved] = useState(false)
+
+  function save() {
+    const t = text.trim()
+    if (!t) return
+    const item = {
+      id: Date.now(),
+      type: 'capture',
+      bucket: 'lens',
+      title: t.slice(0, 80) + (t.length > 80 ? '…' : ''),
+      text: t,
+      source: 'Daily learning',
+      date: new Date().toISOString(),
+    }
+    storage.setBoard([item, ...storage.getBoard()])
+    setText('')
+    setSaved(true)
+    setTimeout(() => setSaved(false), 2000)
+  }
+
+  function handleKey(e) {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) save()
+  }
+
+  return (
+    <div className="mt-4 border border-[#1e3a5f] rounded-xl px-5 py-4 bg-[#0d1829] flex flex-col gap-3">
+      <div>
+        <p className="text-sm font-semibold text-white">What did you learn today?</p>
+        <p className="text-xs text-[#4a6080] mt-0.5">Saved to your Ideas board as a Lens.</p>
+      </div>
+      <textarea
+        value={text}
+        onChange={e => setText(e.target.value)}
+        onKeyDown={handleKey}
+        placeholder="Any observation, reframe, or thing that clicked..."
+        rows={3}
+        className="w-full bg-[#0a1628] border border-[#2a4070] rounded-lg px-4 py-3 text-slate-200 placeholder-slate-600 text-sm leading-relaxed resize-none focus:outline-none focus:border-[#4a6090] transition-colors"
+      />
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-[#3a5070]">Cmd+Enter to save</span>
+        <button
+          onClick={save}
+          disabled={!text.trim()}
+          className="px-4 py-2 bg-[#c5a028] text-[#071020] text-sm font-semibold rounded-lg hover:bg-[#d9b030] disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+        >
+          {saved ? '✓ Saved to Ideas' : 'Save →'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // ── Main component ─────────────────────────────────────────────────────────────
 
 export default function WeeklyScreen({ onNavigate }) {
@@ -154,6 +210,9 @@ export default function WeeklyScreen({ onNavigate }) {
             )}
           </div>
         )}
+
+        {/* Daily learning capture */}
+        <DailyCapture />
 
       </div>
     </div>

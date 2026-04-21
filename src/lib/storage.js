@@ -1,5 +1,7 @@
+import { pushToCloud } from './supabase'
+
 const get = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d } catch { return d } }
-const set = (k, v) => localStorage.setItem(k, JSON.stringify(v))
+const set = (k, v) => { localStorage.setItem(k, JSON.stringify(v)); pushToCloud(k) }
 
 const SESSION_KEY = 'll-session'
 export const saveSession  = (data) => set(SESSION_KEY, data)
@@ -22,7 +24,6 @@ export const DEFAULT_BRAND = {
     { name: 'Ryan Holiday', handle: '@RyanHoliday', topic: 'Stoicism/writing' },
     { name: 'James Clear',  handle: '@JamesClear',  topic: 'Habits/clarity'   },
   ],
-  rssFeeds: [],
 }
 
 export const DEFAULT_SCHEDULE = {
@@ -81,16 +82,15 @@ export const DEFAULT_SCHEDULE = {
 export const storage = {
   getBrand: () => get('ll-brand', DEFAULT_BRAND),
   setBrand: v  => set('ll-brand', v),
-  getSaved: () => get('ll-saved', []),
-  setSaved: v  => set('ll-saved', v),
   getBoard: () => get('ll-board', []),
   setBoard: v  => set('ll-board', v),
   getKey:   () => localStorage.getItem('ll-api-key') || '',
-  setKey:   v  => localStorage.setItem('ll-api-key', v),
+  setKey:   v  => { localStorage.setItem('ll-api-key', v); pushToCloud('ll-api-key') },
   getArchive: () => get('ll-archive', []),
   saveToArchive: (entry) => {
     const existing = get('ll-archive', [])
     set('ll-archive', [{ id: Date.now(), ...entry }, ...existing])
+    pushToCloud('ll-archive')
   },
   getDraftSeed: () => {
     const seed = localStorage.getItem('ll-draft-seed')
