@@ -29,8 +29,8 @@ export default function DraftScreen() {
   const placeholders = extractPlaceholders(draft);
   const wordCount = currentDraft?.wordCount || 0;
   const isPodcast = state.outputType === OUTPUT_TYPES.PODCAST;
-  const maxWords = isPodcast ? 1000 : 400;
-  const warnAt = isPodcast ? 950 : 380;
+  const maxWords = isPodcast ? 1000 : 800;
+  const warnAt   = isPodcast ? 950  : 760;
 
   const wordCountColor =
     wordCount > maxWords ? 'text-red-400' : wordCount >= warnAt ? 'text-amber-400' : 'text-slate-500';
