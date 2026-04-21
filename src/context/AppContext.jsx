@@ -17,6 +17,7 @@ export const SCREENS = {
   TENSION_MAP: 'tension_map',
   ARCHIVE: 'archive',
   IDEA_EXTRACTION: 'idea_extraction',
+  NEWSLETTER_LOOP: 'newsletter_loop',
 };
 
 export const OUTPUT_TYPES = {
@@ -89,6 +90,7 @@ const initialState = {
   rawInput: '',
   outputType: null,           // 'newsletter' | 'podcast'
   entryMode: null,            // 'input' | 'discovery'
+  newsletterSeed: null,       // { topic, pipeline } set when launching loop from an idea
   assessment: null,
   questions: [],
   answers: [],
@@ -179,6 +181,9 @@ function reducer(state, action) {
 
     case 'SET_OUTPUT_TYPE':
       return { ...state, outputType: action.value };
+
+    case 'SET_NEWSLETTER_SEED':
+      return { ...state, newsletterSeed: action.seed, screen: SCREENS.NEWSLETTER_LOOP };
 
     case 'SET_ENTRY_MODE':
       return { ...state, entryMode: action.value };

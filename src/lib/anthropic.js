@@ -809,6 +809,79 @@ Return ONLY the JSON. No markdown fences. No commentary.`
   try { return parseJSON(text) } catch { return { objectives: [] } }
 }
 
+// ── Newsletter Loop ───────────────────────────────────────────────────────────
+
+export async function generateNewsletter({ topic, pipeline, frame, framework, brand }) {
+  const voice  = brand.voiceFingerprint || ''
+  const name   = brand.name || 'RUFIO'
+  const nlName = brand.newsletterName || 'Lessons Learned'
+
+  const frameworkGuide = {
+    pain_process:         'Name the pain the reader already feels → give the specific process to resolve it. Direct and actionable.',
+    pain_concept_process: 'Name the pain → introduce a reframing concept or mental model → give the process. For readers who need a new lens before the how-to.',
+    perspective_advantage_gamify: 'Share a counter-intuitive perspective → show the unfair advantage it creates → turn it into a repeatable system.',
+  }
+
+  const pipelineContext = [
+    pipeline?.q4 && `Opening angle: ${pipeline.q4}`,
+    pipeline?.q5 && `Core insight: ${pipeline.q5}`,
+    pipeline?.q6 && `Caveat to address: ${pipeline.q6}`,
+    pipeline?.q7 && `Payoff for the reader: ${pipeline.q7}`,
+  ].filter(Boolean).join('\n')
+
+  const system = `You are ghostwriting a newsletter issue for ${name} (${nlName}).
+
+VOICE:
+${voice}
+
+FRAMEWORK: ${frameworkGuide[framework] || frameworkGuide.pain_process}
+
+RULES:
+- 700–1000 words. No more.
+- No bullet points. No headers. No listicles.
+- Short paragraphs — 2–3 sentences max. White space is intentional.
+- Never open the newsletter with "I" as the first word.
+- Close with exactly: "Thank you for everything you do." then a blank line then "Fights On, ${name}"
+
+Write the full newsletter. Output nothing else.`
+
+  const user = `Topic: ${topic}
+${pipelineContext ? `\nPipeline notes:\n${pipelineContext}\n` : ''}
+Main point: ${frame.mainPoint}
+Why this matters to the reader right now: ${frame.whyNow}
+What I want the reader to do or feel after reading: ${frame.takeaway}`
+
+  const response = await callAPI({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 1400,
+    system,
+    messages: [{ role: 'user', content: user }],
+  })
+
+  const text = response.content.find(b => b.type === 'text')?.text || ''
+  return { draft: text.trim(), wordCount: countWords(text) }
+}
+
+export async function reviseNewsletter({ draft, instruction, brand }) {
+  const voice = brand.voiceFingerprint || ''
+  const name  = brand.name || 'RUFIO'
+
+  const system = `You are editing a newsletter for ${name}.
+VOICE:
+${voice}
+Apply the requested revision. Keep the same overall structure and voice. Output only the revised newsletter — nothing else.`
+
+  const response = await callAPI({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 1400,
+    system,
+    messages: [{ role: 'user', content: `Current draft:\n\n${draft}\n\nRevision request: ${instruction}` }],
+  })
+
+  const text = response.content.find(b => b.type === 'text')?.text || ''
+  return { draft: text.trim(), wordCount: countWords(text) }
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function parseDraftResponse(text) {
