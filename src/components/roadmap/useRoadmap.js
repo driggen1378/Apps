@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react'
+import { pushToCloud } from '../../lib/supabase'
 
 const KEY = 'roadmap-data'
 
@@ -53,6 +54,7 @@ export function useRoadmap() {
     setState(prev => {
       const next = recompute(fn(prev.data))
       localStorage.setItem(KEY, JSON.stringify(next))
+      pushToCloud(KEY)
       return { data: next, history: [...prev.history.slice(-1), prev.data] }
     })
   }, [])
@@ -62,6 +64,7 @@ export function useRoadmap() {
       if (!prev.history.length) return prev
       const d = prev.history[prev.history.length - 1]
       localStorage.setItem(KEY, JSON.stringify(d))
+      pushToCloud(KEY)
       return { data: d, history: prev.history.slice(0, -1) }
     })
   }, [])

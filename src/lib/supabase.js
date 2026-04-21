@@ -13,6 +13,7 @@ const SYNC_KEYS = [
   'll-weekly-progress',
   'll-archive',
   'll-api-key',
+  'roadmap-data',
 ]
 
 // Push a single key's current localStorage value to Supabase
