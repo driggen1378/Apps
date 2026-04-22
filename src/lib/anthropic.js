@@ -809,6 +809,111 @@ Return ONLY the JSON. No markdown fences. No commentary.`
   try { return parseJSON(text) } catch { return { objectives: [] } }
 }
 
+// ── Newsletter Loop ───────────────────────────────────────────────────────────
+
+export async function generateNewsletter({ topic, pipeline, frame, framework, brand }) {
+  const voice      = brand.voiceFingerprint || ''
+  const name       = brand.name || 'RUFIO'
+  const nlName     = brand.newsletterName || 'Lessons Learned'
+  const standsFor  = brand.standsFor || brand.standFor || ''
+  const standsAgainst = brand.standsAgainst || brand.standAgainst || ''
+  const pillars    = (brand.pillars || []).join(', ')
+
+  const frameworkGuide = {
+    pain_process:
+      'PAIN → PROCESS: Open with the specific pain or frustration the reader already feels (name it plainly, not as a concept). Work through the process that resolves it. End with the transformation — what life looks like after. Every section serves the through-line from problem to resolution.',
+    pain_concept_process:
+      'PAIN → CONCEPT → PROCESS: Open with the pain. Introduce a mental model or reframe that makes the problem make sense in a new way — name it something the reader would actually say. Then give the process that follows from that reframe. The concept is the pivot; without it, the process feels arbitrary.',
+    perspective_advantage_gamify:
+      'PERSPECTIVE → ADVANTAGE → SYSTEM: Open with a counter-intuitive claim — something that sounds wrong until you think about it. Show the specific unfair advantage this perspective creates for people who hold it. Then turn it into a repeatable system the reader can run. The system should feel like a natural consequence of the perspective, not a tacked-on how-to.',
+  }
+
+  const pipelineContext = [
+    pipeline?.q4 && `Opening angle: ${pipeline.q4}`,
+    pipeline?.q5 && `Core insight: ${pipeline.q5}`,
+    pipeline?.q6 && `Caveat to address: ${pipeline.q6}`,
+    pipeline?.q7 && `Payoff for the reader: ${pipeline.q7}`,
+  ].filter(Boolean).join('\n')
+
+  // Layer 1: Dan Koe structural rules (hardcoded)
+  // Layer 2: Brand guardrails (from settings)
+  // Layer 3: Piece-specific inputs (from the form)
+  const system = `You are ghostwriting a newsletter issue for ${name} (${nlName}).
+
+VOICE FINGERPRINT:
+${voice}
+
+BRAND GUARDRAILS:
+Stands for: ${standsFor}
+Stands against: ${standsAgainst}
+Content pillars: ${pillars}
+
+STRUCTURAL RULES (follow these exactly):
+- One topic. One tension. Everything in the piece serves it.
+- Do not open with "I" as the first word. Start in the middle — with the problem, the contradiction, or the claim.
+- Develop each key section with this micro-structure: state the point plainly → explain why it's true (concrete, specific) → tell the reader what to do with it.
+- Short paragraphs — 2–3 sentences maximum. White space is part of the design.
+- No headers. No bullet lists. No numbered lists. Pure prose.
+- Conversational register — write like you're talking to one specific person who trusts you.
+- Do not moralize or lecture. Make the insight land through specificity, not emphasis.
+- Target length: 700–800 words.
+- Close with exactly two lines, nothing after: "Thank you for everything you do." then a blank line then "Fights On,\\n${name}"
+
+FRAMEWORK: ${frameworkGuide[framework] || frameworkGuide.pain_process}
+
+Write the full newsletter. No preamble, no commentary — the newsletter only.`
+
+  const sectionsBlock = frame.sections.length
+    ? `\nKey sections to develop:\n${frame.sections.map((s, i) => `${i + 1}. ${s}`).join('\n')}`
+    : ''
+
+  const anchorBlock = frame.anchor
+    ? `\nAnchor material to weave in: ${frame.anchor}`
+    : ''
+
+  const pipelineBlock = pipelineContext
+    ? `\nPipeline context:\n${pipelineContext}`
+    : ''
+
+  const readerStateLabel = framework === 'perspective_advantage_gamify'
+    ? 'Belief to challenge'
+    : "Reader's entry point (the pain they already feel)"
+
+  const user = `Topic: ${topic}
+
+${readerStateLabel}: ${frame.readerState}${sectionsBlock}${anchorBlock}${pipelineBlock}`
+
+  const response = await callAPI({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 1400,
+    system,
+    messages: [{ role: 'user', content: user }],
+  })
+
+  const text = response.content.find(b => b.type === 'text')?.text || ''
+  return { draft: text.trim(), wordCount: countWords(text) }
+}
+
+export async function reviseNewsletter({ draft, instruction, brand }) {
+  const voice = brand.voiceFingerprint || ''
+  const name  = brand.name || 'RUFIO'
+
+  const system = `You are editing a newsletter for ${name}.
+VOICE:
+${voice}
+Apply the requested revision. Keep the same overall structure and voice. Output only the revised newsletter — nothing else.`
+
+  const response = await callAPI({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 1400,
+    system,
+    messages: [{ role: 'user', content: `Current draft:\n\n${draft}\n\nRevision request: ${instruction}` }],
+  })
+
+  const text = response.content.find(b => b.type === 'text')?.text || ''
+  return { draft: text.trim(), wordCount: countWords(text) }
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function parseDraftResponse(text) {
