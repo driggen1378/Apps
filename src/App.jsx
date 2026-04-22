@@ -3,7 +3,7 @@ import AuthGate from './components/AuthGate'
 import BrandSettings from './components/BrandSettings'
 import Create from './components/Create'
 import Ideas from './components/Ideas'
-import ArchiveScreen from './screens/ArchiveScreen'
+import DraftsScreen from './screens/DraftsScreen'
 import Roadmap from './components/Roadmap'
 import WeeklyScreen from './screens/WeeklyScreen'
 import NewsletterScreen from './screens/NewsletterScreen'
@@ -14,8 +14,8 @@ const NAV = [
   { id: 'ideas',      label: 'Ideas',          icon: '💡' },
   { id: 'newsletter', label: 'Newsletter',     icon: '✉️' },
   { id: 'create',     label: 'Create',         icon: '✍️' },
+  { id: 'drafts',     label: 'Drafts',         icon: '📝' },
   { id: 'roadmap',    label: 'Roadmap',        icon: '🗺️' },
-  { id: 'archive',    label: 'Archive',        icon: '📁' },
   { id: 'settings',   label: 'Brand Settings', icon: '⚙️' },
 ]
 
@@ -128,8 +128,8 @@ function AppInner() {
           {section === 'ideas'      && <Ideas onDraftFromIdea={handleDraftFromIdea} />}
           {section === 'newsletter' && <NewsletterScreen />}
           {section === 'create'     && <Create />}
+          {section === 'drafts'     && <DraftsScreen />}
           {section === 'roadmap'    && <Roadmap />}
-          {section === 'archive'    && <ArchiveScreen />}
           {section === 'settings'   && <BrandSettings />}
         </div>
 

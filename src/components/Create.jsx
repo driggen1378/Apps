@@ -8,6 +8,7 @@ import DiscoveryScreen from '../screens/DiscoveryScreen'
 import QuestionFormationScreen from '../screens/QuestionFormationScreen'
 import TensionMapScreen from '../screens/TensionMapScreen'
 import IdeaExtractionScreen from '../screens/IdeaExtractionScreen'
+import NewsletterLoopScreen from '../screens/NewsletterLoopScreen'
 
 function CreateInner() {
   const { state, SCREENS } = useApp()
@@ -23,6 +24,7 @@ function CreateInner() {
       {state.screen === SCREENS.QUESTION_FORMATION && <QuestionFormationScreen />}
       {state.screen === SCREENS.TENSION_MAP        && <TensionMapScreen />}
       {state.screen === SCREENS.IDEA_EXTRACTION    && <IdeaExtractionScreen />}
+      {state.screen === SCREENS.NEWSLETTER_LOOP    && <NewsletterLoopScreen seed={state.newsletterSeed} />}
     </div>
   )
 }

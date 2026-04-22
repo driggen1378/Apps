@@ -2,6 +2,125 @@ import { useState } from 'react'
 import { storage } from '../lib/storage'
 import PipelineModal from './ideas/PipelineModal'
 
+// ── Idea Generation Guide Modal ────────────────────────────────────────────────
+
+const ANGLES = [
+  'common pain points', 'how to', 'lessons learned', 'why people should care',
+  'harsh truths', 'popular/common advice', 'my opinion on common advice',
+  'anything that helps someone move from point A to point B',
+]
+
+const KEEPERS = [
+  'solve a real problem', 'sharpen judgment',
+  'expose a hidden dynamic', 'help someone act more deliberately',
+]
+
+function IdeaGuideModal({ onClose }) {
+  const brand    = storage.getBrand()
+  const pillars  = brand.pillars?.length ? brand.pillars : ['[pillar 1]', '[pillar 2]', '[pillar 3]']
+  const mission  = brand.tagline || '[your brand mission]'
+  const [copied, setCopied] = useState(false)
+
+  const prompt = `My brand mission is: ${mission}
+My point A is: [uncertain and reactive — edit to match yours]
+My point B is: [clear and deliberate — edit to match yours]
+My pillars are:
+${pillars.map((p, i) => `${i + 1}. ${p}`).join('\n')}
+
+For the pillar [insert pillar] and subtopic [insert subtopic], generate 30 simple content ideas.
+
+Use these angles:
+${ANGLES.map(a => `- ${a}`).join('\n')}
+
+Requirements:
+- keep each idea short and plain
+- avoid hype, guru language, and generic self-help phrasing
+- make the ideas useful in real life
+- show how this subtopic connects to the other pillars when relevant
+- prioritize ideas about judgment, habits, attention, responsibility, relationships, work, technology, and modern life
+- include a mix of practical, philosophical, and contrarian ideas`
+
+  function copy() {
+    navigator.clipboard.writeText(prompt).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 overflow-y-auto py-6 px-4">
+      <div className="w-full max-w-lg bg-[#0d1f38] border border-[#1e3a5f] rounded-2xl flex flex-col">
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-5 border-b border-[#1e3a5f]">
+          <div>
+            <p className="text-white font-bold text-sm">Idea Generation Guide</p>
+            <p className="text-[#4a6080] text-xs mt-0.5">Pillar → Subtopic → Angle → Cross-link → Topic</p>
+          </div>
+          <button onClick={onClose} className="text-[#4a6080] hover:text-white transition-colors text-lg leading-none">✕</button>
+        </div>
+
+        <div className="px-6 py-5 flex flex-col gap-5 overflow-y-auto">
+
+          {/* Steps */}
+          <div className="flex flex-col gap-3">
+            {[
+              { n: 1, label: 'Pick 1 subtopic per pillar',
+                body: 'Example: Psychology → Attention' },
+              { n: 2, label: 'Ask AI for 10 raw angles',
+                body: null, list: ANGLES },
+              { n: 3, label: 'Cross-link to other pillars',
+                body: 'Example: Attention + Judgment + Technology\nThis is where your better ideas come from.' },
+              { n: 4, label: 'Keep only ideas that do at least one of these',
+                body: null, list: KEEPERS },
+              { n: 5, label: 'Rewrite winners in plain language',
+                body: 'If it sounds too abstract, too online, or too clever, cut it.' },
+            ].map(s => (
+              <div key={s.n} className="flex gap-3">
+                <div className="w-6 h-6 rounded-full bg-[#1e3a5f] text-[#c5a028] text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">{s.n}</div>
+                <div>
+                  <p className="text-white text-sm font-semibold">{s.label}</p>
+                  {s.body && <p className="text-[#7a9ab5] text-xs mt-0.5 whitespace-pre-line leading-relaxed">{s.body}</p>}
+                  {s.list && (
+                    <ul className="mt-1 flex flex-col gap-0.5">
+                      {s.list.map((l, i) => (
+                        <li key={i} className="text-[#7a9ab5] text-xs flex gap-2">
+                          <span className="text-[#3b5070] shrink-0">–</span>{l}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Divider */}
+          <div className="border-t border-[#1e3a5f]" />
+
+          {/* Prompt template */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-white text-sm font-semibold">AI Prompt Template</p>
+              <button onClick={copy}
+                className="text-xs px-3 py-1 rounded bg-[#1e3a5f] text-[#7a9ab5] hover:text-white hover:bg-[#2a4070] transition-colors">
+                {copied ? 'Copied ✓' : 'Copy'}
+              </button>
+            </div>
+            <p className="text-[#4a6080] text-xs mb-2">
+              Your pillars are pre-filled. Edit the bracketed parts before pasting.
+            </p>
+            <pre className="bg-[#071020] border border-[#1e3a5f] rounded-lg p-4 text-[#7a9ab5] text-xs leading-relaxed whitespace-pre-wrap font-mono overflow-x-auto">
+              {prompt}
+            </pre>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Stage config ───────────────────────────────────────────────────────────────
 
 const STAGES = {
@@ -35,6 +154,7 @@ export default function Ideas({ onDraftFromIdea }) {
   const [captureSaved, setCaptureSaved] = useState(false)
   const [pipelineItem, setPipelineItem] = useState(null)
   const [showKilled, setShowKilled] = useState(false)
+  const [showGuide, setShowGuide] = useState(false)
 
   function saveCapture() {
     const text = captureText.trim()
@@ -84,6 +204,7 @@ export default function Ideas({ onDraftFromIdea }) {
 
   return (
     <div className="flex-1 flex flex-col relative">
+      {showGuide && <IdeaGuideModal onClose={() => setShowGuide(false)} />}
       {pipelineItem && (
         <PipelineModal
           item={pipelineItem}
@@ -129,11 +250,17 @@ export default function Ideas({ onDraftFromIdea }) {
             </button>
           </div>
 
-          {board.length > 0 && (
-            <button onClick={openBoard} className="text-xs text-[#6a80a0] hover:text-[#c5a028] transition-colors self-start">
-              View board ({board.length}){readyCount > 0 ? ` · ${readyCount} ready` : ''} →
+          <div className="flex items-center justify-between">
+            {board.length > 0 ? (
+              <button onClick={openBoard} className="text-xs text-[#6a80a0] hover:text-[#c5a028] transition-colors">
+                View board ({board.length}){readyCount > 0 ? ` · ${readyCount} ready` : ''} →
+              </button>
+            ) : <span />}
+            <button onClick={() => setShowGuide(true)}
+              className="text-xs text-[#4a6080] hover:text-[#c5a028] border border-[#1e3a5f] hover:border-[#c5a028]/40 px-3 py-1.5 rounded-lg transition-all">
+              Can't think of anything? →
             </button>
-          )}
+          </div>
         </div>
       )}
 

@@ -92,6 +92,19 @@ export const storage = {
     set('ll-archive', [{ id: Date.now(), ...entry }, ...existing])
     pushToCloud('ll-archive')
   },
+  getDrafts: () => get('ll-drafts', []),
+  saveDraft: (draft) => {
+    const existing = get('ll-drafts', [])
+    // Replace existing draft with same id, or prepend new one
+    const idx = existing.findIndex(d => d.id === draft.id)
+    const next = idx >= 0
+      ? existing.map((d, i) => i === idx ? { ...d, ...draft, updatedAt: new Date().toISOString() } : d)
+      : [{ ...draft, id: draft.id || Date.now(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }, ...existing]
+    set('ll-drafts', next)
+  },
+  deleteDraft: (id) => {
+    set('ll-drafts', get('ll-drafts', []).filter(d => d.id !== id))
+  },
   getDraftSeed: () => {
     const seed = localStorage.getItem('ll-draft-seed')
     if (seed) localStorage.removeItem('ll-draft-seed')

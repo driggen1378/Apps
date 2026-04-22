@@ -6,33 +6,28 @@ export default function AuthGate({ children }) {
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
-    supabase.auth.getSession()
-      .then(({ data: { session } }) => {
+    // Hard timeout — app always opens within 3s regardless of network
+    const timeout = setTimeout(() => setReady(true), 3000)
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN') {
+        clearTimeout(timeout)
         if (session) {
           setUser(session.user)
-          // sync in background — never block setReady
           pullFromCloud()
             .then(cloudKeys => pushMissingToCloud(cloudKeys))
             .catch(() => {})
         }
-      })
-      .catch(() => {})
-      .finally(() => setReady(true)) // always open the app, even if sync fails
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' && session) {
-        setUser(session.user)
         setReady(true)
-        // sync in background — never block app open
-        pullFromCloud()
-          .then(cloudKeys => pushMissingToCloud(cloudKeys))
-          .catch(() => {})
       } else if (event === 'SIGNED_OUT') {
         setUser(null)
+        setReady(true)
+      } else if (event === 'TOKEN_REFRESHED' && session) {
+        setUser(session.user)
       }
     })
 
-    return () => subscription.unsubscribe()
+    return () => { clearTimeout(timeout); subscription.unsubscribe() }
   }, [])
 
   if (!ready) return <Splash />
