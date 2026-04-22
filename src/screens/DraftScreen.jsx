@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
-import { reviseDraft, generateSpeakingOutline, fillInPlaceholder, reviewArgument } from '../lib/anthropic';
+import { reviseDraft, generateSpeakingOutline, fillInPlaceholder, reviewArgument, scoreDraftAgainstBrand, countWords } from '../lib/anthropic';
 import { storage } from '../lib/storage';
 
 function extractPlaceholders(text) {
@@ -8,7 +8,7 @@ function extractPlaceholders(text) {
   return [...new Set(text.match(regex) || [])];
 }
 
-export default function DraftScreen() {
+export default function DraftScreen({ onNavigate }) {
   const { state, dispatch, SCREENS, OUTPUT_TYPES, currentDraft } = useApp();
   const [feedback, setFeedback] = useState('');
   const chatEndRef = useRef(null);
@@ -18,8 +18,13 @@ export default function DraftScreen() {
   const [outlineText, setOutlineText] = useState('');
   const [outlineLoading, setOutlineLoading] = useState(false);
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
-  const [reviewText, setReviewText] = useState('');
   const [reviewLoading, setReviewLoading] = useState(false);
+  const [reviewStep, setReviewStep] = useState('review'); // 'review' | 'scoring' | 'scored'
+  const [reviewHighlights, setReviewHighlights] = useState('');
+  const [reviewRecommendedChanges, setReviewRecommendedChanges] = useState('');
+  const [editableDraft, setEditableDraft] = useState('');
+  const [brandScores, setBrandScores] = useState(null);
+  const [scoreError, setScoreError] = useState(null);
   const [activePh, setActivePh] = useState(null);
   const [phInput, setPhInput] = useState('');
   const [phLoading, setPhLoading] = useState(false);
@@ -123,15 +128,59 @@ export default function DraftScreen() {
     if (reviewLoading || !draft) return;
     setReviewLoading(true);
     setReviewModalOpen(true);
-    setReviewText('');
+    setReviewStep('review');
+    setReviewHighlights('');
+    setReviewRecommendedChanges('');
+    setEditableDraft(draft);
+    setBrandScores(null);
+    setScoreError(null);
     try {
       const result = await reviewArgument({ draft, brand: state.brand });
-      setReviewText(result);
+      setReviewHighlights(result.highlights || '');
+      setReviewRecommendedChanges(result.recommendedChanges || '');
     } catch (err) {
-      setReviewText(`Error: ${err.message || 'Failed to review argument.'}`);
+      setReviewHighlights(`Error: ${err.message || 'Failed to review argument.'}`);
     } finally {
       setReviewLoading(false);
     }
+  }
+
+  async function handleSubmitForScoring() {
+    if (!editableDraft.trim()) return;
+    setReviewStep('scoring');
+    setScoreError(null);
+    try {
+      const result = await scoreDraftAgainstBrand({ draft: editableDraft, brand: state.brand });
+      setBrandScores(result.scores || []);
+      setReviewStep('scored');
+    } catch (err) {
+      setScoreError(err.message || 'Scoring failed. Try again.');
+      setReviewStep('review');
+    }
+  }
+
+  function handleSaveAndGoToDrafts() {
+    if (!editableDraft.trim()) return;
+    const wc = countWords(editableDraft);
+    dispatch({ type: 'ADD_DRAFT_VERSION', draft: editableDraft, wordCount: wc });
+    storage.saveDraft({
+      id: Date.now(),
+      title: state.rawInput?.slice(0, 80) || 'Draft',
+      content: editableDraft,
+      wordCount: wc,
+      outputType: state.outputType,
+      readyToPublish: true,
+      brandScores: brandScores || [],
+    });
+    setReviewModalOpen(false);
+    setReviewStep('review');
+    onNavigate?.('drafts');
+  }
+
+  function closeReviewModal() {
+    setReviewModalOpen(false);
+    setReviewStep('review');
+    setScoreError(null);
   }
 
   const versionLabel = (i) => {
@@ -172,33 +221,119 @@ export default function DraftScreen() {
       )}
       {reviewModalOpen && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/70">
-          <div className="bg-[#141620] border border-[#2a2d3e] rounded-2xl shadow-2xl w-full max-w-2xl mx-6 flex flex-col max-h-[85vh]">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-[#2a2d3e]">
+          <div className="bg-[#141620] border border-[#2a2d3e] rounded-2xl shadow-2xl w-full max-w-3xl mx-6 flex flex-col max-h-[90vh]">
+
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-[#2a2d3e] shrink-0">
               <div className="flex flex-col">
-                <span className="text-sm font-semibold text-white">Argument Review</span>
-                <span className="text-xs text-slate-600">Intellectual-honesty pass — flags + rewrites</span>
+                <span className="text-sm font-semibold text-white">
+                  {reviewStep === 'scored' ? 'Brand Score' : 'Argument Review'}
+                </span>
+                <span className="text-xs text-slate-600">
+                  {reviewStep === 'scored'
+                    ? 'How well this draft hits your brand priorities'
+                    : 'Intellectual-honesty pass — flags + rewrites'}
+                </span>
               </div>
-              <button onClick={() => setReviewModalOpen(false)}
+              <button onClick={closeReviewModal}
                 className="text-slate-500 hover:text-white transition-colors text-lg leading-none">✕</button>
             </div>
-            <div className="flex-1 overflow-y-auto px-6 py-5">
-              {reviewLoading ? (
-                <div className="flex items-center justify-center py-8 gap-2">
-                  <LoadingDots />
-                  <span className="text-sm text-slate-500 ml-2">Pressure-testing the argument…</span>
+
+            {/* Body */}
+            {reviewStep === 'review' && (
+              <div className="flex-1 overflow-y-auto min-h-0">
+                {reviewLoading ? (
+                  <div className="flex items-center justify-center py-12 gap-2">
+                    <LoadingDots />
+                    <span className="text-sm text-slate-500 ml-2">Pressure-testing the argument…</span>
+                  </div>
+                ) : (
+                  <>
+                    {scoreError && (
+                      <div className="mx-6 mt-4 bg-red-900/30 border border-red-700/50 rounded-lg px-4 py-2">
+                        <p className="text-xs text-red-300">{scoreError}</p>
+                      </div>
+                    )}
+
+                    {reviewHighlights && (
+                      <div className="px-6 py-5 border-b border-[#1e2130]">
+                        <p className="text-xs text-slate-500 uppercase tracking-wider font-mono mb-3">Highlights</p>
+                        <pre className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap" style={{ fontFamily: 'inherit' }}>{reviewHighlights}</pre>
+                      </div>
+                    )}
+
+                    {reviewRecommendedChanges && (
+                      <div className="px-6 py-5 border-b border-[#1e2130]">
+                        <p className="text-xs text-amber-500 uppercase tracking-wider font-mono mb-3">Recommended Changes</p>
+                        <pre className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap" style={{ fontFamily: 'inherit' }}>{reviewRecommendedChanges}</pre>
+                      </div>
+                    )}
+
+                    {reviewHighlights && (
+                      <div className="px-6 py-5">
+                        <p className="text-xs text-slate-500 uppercase tracking-wider font-mono mb-3">Edit your draft</p>
+                        <textarea
+                          value={editableDraft}
+                          onChange={(e) => setEditableDraft(e.target.value)}
+                          className="w-full bg-[#0f1117] border border-[#2a2d3e] rounded-xl px-4 py-4 text-slate-200 text-sm leading-[1.8] resize-none focus:outline-none focus:border-slate-500 transition-colors"
+                          style={{ fontFamily: "'Georgia', 'Times New Roman', serif", minHeight: '260px' }}
+                          spellCheck
+                        />
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+
+            {reviewStep === 'scoring' && (
+              <div className="flex-1 flex items-center justify-center gap-2">
+                <LoadingDots />
+                <span className="text-sm text-slate-500 ml-2">Scoring against your brand…</span>
+              </div>
+            )}
+
+            {reviewStep === 'scored' && brandScores && (
+              <div className="flex-1 overflow-y-auto px-6 py-5 min-h-0">
+                <div className="flex flex-col">
+                  {brandScores.map((item, i) => (
+                    <ScoreRow key={i} label={item.label} score={item.score} note={item.note} />
+                  ))}
                 </div>
+              </div>
+            )}
+
+            {/* Footer */}
+            <div className="px-6 py-4 border-t border-[#2a2d3e] flex items-center justify-between shrink-0">
+              {reviewStep === 'scored' ? (
+                <>
+                  <button onClick={() => setReviewStep('review')}
+                    className="text-xs text-slate-400 hover:text-white border border-[#2a2d3e] hover:border-slate-500 px-3 py-1.5 rounded-lg transition-all">
+                    ← Back to edit
+                  </button>
+                  <button onClick={handleSaveAndGoToDrafts}
+                    className="px-5 py-2 bg-white text-[#0f1117] text-xs font-bold rounded-xl hover:bg-slate-100 transition-all">
+                    Save → Drafts
+                  </button>
+                </>
               ) : (
-                <pre className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap select-all"
-                  style={{ fontFamily: 'inherit' }}>{reviewText}</pre>
+                <>
+                  <button
+                    onClick={() => { try { navigator.clipboard.writeText(`${reviewHighlights}\n\n---\n\n${reviewRecommendedChanges}`) } catch {} }}
+                    disabled={reviewLoading || !reviewHighlights}
+                    className="text-xs text-slate-400 hover:text-white border border-[#2a2d3e] hover:border-slate-500 px-3 py-1.5 rounded-lg transition-all disabled:opacity-40">
+                    Copy review
+                  </button>
+                  <button
+                    onClick={handleSubmitForScoring}
+                    disabled={reviewLoading || !reviewHighlights || !editableDraft.trim()}
+                    className="px-5 py-2 bg-white text-[#0f1117] text-xs font-bold rounded-xl hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all">
+                    Submit for scoring →
+                  </button>
+                </>
               )}
             </div>
-            <div className="px-6 py-4 border-t border-[#2a2d3e] flex justify-end">
-              <button onClick={() => { try { navigator.clipboard.writeText(reviewText) } catch {} }}
-                disabled={reviewLoading || !reviewText}
-                className="text-xs text-slate-300 hover:text-white border border-[#2a2d3e] hover:border-slate-500 px-3 py-1.5 rounded-lg transition-all disabled:opacity-40">
-                Copy to clipboard
-              </button>
-            </div>
+
           </div>
         </div>
       )}
@@ -389,5 +524,24 @@ function LoadingDots() {
           style={{ animationDelay: `${i * 0.15}s` }} />
       ))}
     </span>
+  );
+}
+
+function ScoreRow({ label, score, note }) {
+  const color = score >= 7 ? 'text-green-400' : score >= 5 ? 'text-amber-400' : 'text-red-400';
+  const barColor = score >= 7 ? 'bg-green-500' : score >= 5 ? 'bg-amber-500' : 'bg-red-500';
+  return (
+    <div className="py-3 border-b border-[#1e2130] last:border-0">
+      <div className="flex items-center justify-between mb-1.5">
+        <span className="text-sm text-slate-200">{label}</span>
+        <span className={`text-base font-bold font-mono ${color}`}>
+          {score}<span className="text-xs text-slate-600">/10</span>
+        </span>
+      </div>
+      <div className="w-full bg-[#1e2130] rounded-full h-1 mb-1.5">
+        <div className={`h-1 rounded-full ${barColor} transition-all`} style={{ width: `${score * 10}%` }} />
+      </div>
+      {note && <p className="text-xs text-slate-500">{note}</p>}
+    </div>
   );
 }

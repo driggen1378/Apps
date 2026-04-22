@@ -10,14 +10,14 @@ import TensionMapScreen from '../screens/TensionMapScreen'
 import IdeaExtractionScreen from '../screens/IdeaExtractionScreen'
 import NewsletterLoopScreen from '../screens/NewsletterLoopScreen'
 
-function CreateInner() {
+function CreateInner({ onNavigate }) {
   const { state, SCREENS } = useApp()
 
   return (
     <div className="flex flex-col flex-1 min-h-0 bg-[#0f1117] text-slate-200">
       {state.screen === SCREENS.HOME               && <HomeScreen />}
       {state.screen === SCREENS.QA                 && <QAScreen />}
-      {state.screen === SCREENS.DRAFT              && <DraftScreen />}
+      {state.screen === SCREENS.DRAFT              && <DraftScreen onNavigate={onNavigate} />}
       {state.screen === SCREENS.HEADLINES          && <HeadlinesScreen />}
       {state.screen === SCREENS.FILTER             && <FilterScreen />}
       {state.screen === SCREENS.DISCOVERY          && <DiscoveryScreen />}
@@ -29,10 +29,10 @@ function CreateInner() {
   )
 }
 
-export default function Create() {
+export default function Create({ onNavigate }) {
   return (
     <AppProvider>
-      <CreateInner />
+      <CreateInner onNavigate={onNavigate} />
     </AppProvider>
   )
 }

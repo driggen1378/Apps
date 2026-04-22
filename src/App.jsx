@@ -127,7 +127,7 @@ function AppInner() {
           {section === 'weekly'     && <WeeklyScreen onNavigate={navigate} />}
           {section === 'ideas'      && <Ideas onDraftFromIdea={handleDraftFromIdea} />}
           {section === 'newsletter' && <NewsletterScreen />}
-          {section === 'create'     && <Create />}
+          {section === 'create'     && <Create onNavigate={navigate} />}
           {section === 'drafts'     && <DraftsScreen />}
           {section === 'roadmap'    && <Roadmap />}
           {section === 'settings'   && <BrandSettings />}
