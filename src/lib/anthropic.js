@@ -19,18 +19,32 @@ async function callAPI({ model, max_tokens, temperature, system, messages, tools
   if (tools?.some(t => t.type?.startsWith('web_search'))) {
     headers['anthropic-beta'] = 'web-search-2025-03-05'
   }
-  const res = await fetch(API_URL, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({
-      model,
-      max_tokens,
-      ...(temperature !== undefined && { temperature }),
-      system,
-      messages,
-      ...(tools && { tools }),
-    }),
-  })
+
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 90_000)
+
+  let res
+  try {
+    res = await fetch(API_URL, {
+      method: 'POST',
+      headers,
+      signal: controller.signal,
+      body: JSON.stringify({
+        model,
+        max_tokens,
+        ...(temperature !== undefined && { temperature }),
+        system,
+        messages,
+        ...(tools && { tools }),
+      }),
+    })
+  } catch (err) {
+    if (err.name === 'AbortError') throw new Error('Request timed out — try again.')
+    throw err
+  } finally {
+    clearTimeout(timeout)
+  }
+
   if (!res.ok) {
     const err = await res.json().catch(() => ({}))
     throw new Error(err.error?.message || `API error ${res.status}`)
@@ -994,13 +1008,17 @@ Be direct. Do not default to generic frameworks or "safe" answers. If a section 
 
 ${draft}
 
-Respond in this structure:
+Respond in this exact structure, including the separator line:
+
 **Main claim** — stated in one plain sentence.
 **Does the evidence hold?** — where the examples do and don't support the size of the claim.
 **Flags** — overreach, weak links, hidden assumptions, vague terms, false equivalences. Be specific about which sentences.
+**What's strong** — one line on what to preserve.
+
+===RECOMMENDED CHANGES===
+
 **Key distinctions to add** — what sharpening would make this hold up.
-**Rewrites** — 2–4 specific paragraphs, rewritten. Quote the original line, then write the fix.
-**What's strong** — one line on what to preserve.`
+**Rewrites** — 2–4 specific paragraphs, rewritten. Quote the original line, then write the fix.`
 
   const response = await callAPI({
     model: 'claude-sonnet-4-6',
@@ -1010,7 +1028,61 @@ Respond in this structure:
     messages: [{ role: 'user', content: user }],
   })
 
-  return response.content.find(b => b.type === 'text')?.text || ''
+  const text = response.content.find(b => b.type === 'text')?.text || ''
+  const SEPARATOR = '===RECOMMENDED CHANGES==='
+  const sepIndex = text.indexOf(SEPARATOR)
+  if (sepIndex !== -1) {
+    return {
+      highlights: text.slice(0, sepIndex).trim(),
+      recommendedChanges: text.slice(sepIndex + SEPARATOR.length).trim(),
+    }
+  }
+  return { highlights: text, recommendedChanges: '' }
+}
+
+// ── Brand scoring after argument review ──────────────────────────────────────
+
+export async function scoreDraftAgainstBrand({ draft, brand }) {
+  const pillars = (brand.pillars || []).slice(0, 6)
+  const standsFor = brand.standsFor || ''
+  const voiceFingerprint = (brand.voiceFingerprint || '').slice(0, 400)
+
+  const criteriaList = [
+    ...pillars,
+    'Brand voice and writing style',
+    'Core promise (helps reader think clearly and act on what they have)',
+  ]
+
+  const system = `You are scoring a newsletter or podcast draft against specific brand criteria. Return only valid JSON, no other text.`
+
+  const user = `Score this draft against each criterion on a scale of 1–10. Be honest — low scores are useful.
+
+Brand stands for: ${standsFor}
+Voice guide: ${voiceFingerprint}
+
+Criteria:
+${criteriaList.map((c, i) => `${i + 1}. ${c}`).join('\n')}
+
+Draft:
+${draft}
+
+Return JSON exactly like this:
+{
+  "scores": [
+    { "label": "criterion name", "score": 8, "note": "one short sentence" }
+  ]
+}`
+
+  const response = await callAPI({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 1200,
+    temperature: 0,
+    system,
+    messages: [{ role: 'user', content: user }],
+  })
+
+  const text = response.content.find(b => b.type === 'text')?.text || ''
+  return parseJSON(text)
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
