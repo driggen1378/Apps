@@ -914,6 +914,105 @@ Apply the requested revision. Keep the same overall structure and voice. Output 
   return { draft: text.trim(), wordCount: countWords(text) }
 }
 
+// ── Stress-test framing before generation ────────────────────────────────────
+
+export async function workshopFraming({ topic, frame, framework, brand }) {
+  const standsFor     = brand.standsFor || brand.standFor || ''
+  const standsAgainst = brand.standsAgainst || brand.standAgainst || ''
+
+  const system = `Treat this entire conversation as a high-rigor idea workshop. Requirements:
+- Prioritize accuracy, depth, and intellectual honesty over politeness or agreement.
+- Actively challenge the ideas: identify flaws, contradictions, edge cases, and second-order effects.
+- Do not default to generic frameworks, clichés, or "safe" answers.
+- If an idea is weak, incoherent, impractical, or underdeveloped, say so plainly and explain why.
+- Extend ideas creatively only where it adds real value; avoid filler or abstraction.
+- Avoid premature summaries, conclusions, or over-structuring unless explicitly requested.
+- Ground responses in realistic constraints (incentives, tradeoffs, feasibility).
+- If uncertain, state uncertainty clearly rather than sounding confident.
+- Optimize for usefulness and rigor, not validation.
+
+Brand context:
+- Stands for: ${standsFor}
+- Stands against: ${standsAgainst}
+
+You are stress-testing a newsletter's framing BEFORE it's written. Find the weak spots so the author can fix them before committing to a draft.`
+
+  const user = `Framework: ${framework}
+
+Topic: ${topic}
+
+Reader entry point / belief to challenge: ${frame.readerState}
+
+Key sections planned:
+${frame.sections.map((s, i) => `${i + 1}. ${s}`).join('\n')}
+${frame.anchor ? `\nAnchor material: ${frame.anchor}` : ''}
+
+Respond in this structure:
+**Main claim** — the size and shape of what this piece is actually arguing.
+**Where it overreaches** — specific places the claim is bigger than the evidence, or the framing hides assumptions.
+**Weak links** — sections that won't carry their weight or don't follow from the one before.
+**What's missing** — objections, counter-examples, or distinctions that need to be there.
+**Sharpen** — 2–4 concrete rewrites of the framing or specific sections that would make the piece hold up.
+
+Be direct. If the framing is sound, say so plainly and move on.`
+
+  const response = await callAPI({
+    model: 'claude-sonnet-4-6',
+    max_tokens: 2000,
+    temperature: 0.7,
+    system,
+    messages: [{ role: 'user', content: user }],
+  })
+
+  return response.content.find(b => b.type === 'text')?.text || ''
+}
+
+// ── Argument review on the written draft ─────────────────────────────────────
+
+export async function reviewArgument({ draft, brand }) {
+  const standsFor     = brand.standsFor || brand.standFor || ''
+  const standsAgainst = brand.standsAgainst || brand.standAgainst || ''
+
+  const system = `You are reviewing a publish-ready piece of writing for intellectual honesty. Your job is to keep the author credible by catching argument problems before readers do.
+
+When reviewing:
+1. Identify the main claim in plain language.
+2. Check whether the examples actually support the size of the claim.
+3. Flag overreach, weak links, hidden assumptions, vague terms, false equivalences, and places where the argument jumps too far.
+4. Make key distinctions that sharpen the idea (for example: process vs outcome, short-term vs long-term, closed system vs open system, survivability vs optimization).
+5. Preserve what is strong. Cut or tighten what is unsupported.
+6. Rewrite weak sections directly instead of only criticizing them.
+7. Prefer concrete fixes over abstract commentary.
+
+Brand context:
+- Stands for: ${standsFor}
+- Stands against: ${standsAgainst}
+
+Be direct. Do not default to generic frameworks or "safe" answers. If a section is unsupported, say so and rewrite it. If the argument holds, say so plainly.`
+
+  const user = `Review this draft:
+
+${draft}
+
+Respond in this structure:
+**Main claim** — stated in one plain sentence.
+**Does the evidence hold?** — where the examples do and don't support the size of the claim.
+**Flags** — overreach, weak links, hidden assumptions, vague terms, false equivalences. Be specific about which sentences.
+**Key distinctions to add** — what sharpening would make this hold up.
+**Rewrites** — 2–4 specific paragraphs, rewritten. Quote the original line, then write the fix.
+**What's strong** — one line on what to preserve.`
+
+  const response = await callAPI({
+    model: 'claude-sonnet-4-6',
+    max_tokens: 2500,
+    temperature: 0.7,
+    system,
+    messages: [{ role: 'user', content: user }],
+  })
+
+  return response.content.find(b => b.type === 'text')?.text || ''
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function parseDraftResponse(text) {

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useApp } from '../context/AppContext'
-import { generateNewsletter } from '../lib/anthropic'
+import { generateNewsletter, workshopFraming } from '../lib/anthropic'
 import { storage } from '../lib/storage'
 
 const FRAMEWORKS = [
@@ -53,9 +53,13 @@ export default function NewsletterLoopScreen({ seed }) {
   const [anchor,      setAnchor]      = useState('')
   const [loading,     setLoading]     = useState(false)
   const [error,       setError]       = useState('')
+  const [workshopLoading, setWorkshopLoading] = useState(false)
+  const [workshopText,    setWorkshopText]    = useState('')
+  const [workshopError,   setWorkshopError]   = useState('')
 
   const filledSections = sections.filter(s => s.trim())
   const canGenerate = topic.trim() && readerState.trim() && filledSections.length >= 2
+  const canWorkshop = canGenerate
 
   function addSection() {
     if (sections.length < 5) setSections([...sections, ''])
@@ -97,6 +101,30 @@ export default function NewsletterLoopScreen({ seed }) {
     } catch (err) {
       setError(err.message || 'Something went wrong. Check your API key.')
       setLoading(false)
+    }
+  }
+
+  async function stressTest() {
+    if (!canWorkshop || workshopLoading) return
+    setWorkshopLoading(true)
+    setWorkshopError('')
+    setWorkshopText('')
+    try {
+      const text = await workshopFraming({
+        topic: topic.trim(),
+        frame: {
+          readerState: readerState.trim(),
+          sections:    filledSections,
+          anchor:      anchor.trim(),
+        },
+        framework,
+        brand,
+      })
+      setWorkshopText(text)
+    } catch (err) {
+      setWorkshopError(err.message || 'Stress-test failed.')
+    } finally {
+      setWorkshopLoading(false)
     }
   }
 
@@ -239,7 +267,7 @@ export default function NewsletterLoopScreen({ seed }) {
               value={anchor}
               onChange={e => setAnchor(e.target.value)}
               rows={2}
-              placeholder="e.g. "Most people don't have a skill problem, they have a positioning problem." — Dan Koe"
+              placeholder={'e.g. "Most people don\'t have a skill problem, they have a positioning problem." — Dan Koe'}
               className={input}
             />
           </Field>
@@ -247,6 +275,36 @@ export default function NewsletterLoopScreen({ seed }) {
           {error && (
             <p className="text-xs text-red-400 bg-red-900/20 border border-red-800/30 rounded-xl px-4 py-3">{error}</p>
           )}
+
+          {/* Stress-test framing — optional pre-check */}
+          <div className="flex flex-col gap-2">
+            <button
+              onClick={stressTest}
+              disabled={!canWorkshop || workshopLoading}
+              className="w-full py-2.5 border border-[#2a3a4a] text-slate-300 hover:text-white hover:border-slate-500 text-xs font-semibold uppercase tracking-wider rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {workshopLoading ? 'Stress-testing…' : 'Stress-test framing first'}
+            </button>
+            {workshopError && (
+              <p className="text-xs text-red-400 bg-red-900/20 border border-red-800/30 rounded-xl px-4 py-3">{workshopError}</p>
+            )}
+            {workshopText && (
+              <div className="bg-[#0d1829] border border-[#1e3a5f] rounded-xl px-4 py-4">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-xs font-mono text-[#4a7080] uppercase tracking-wider">Workshop critique</p>
+                  <button
+                    onClick={() => setWorkshopText('')}
+                    className="text-xs text-slate-600 hover:text-slate-400 transition-colors">
+                    ✕ dismiss
+                  </button>
+                </div>
+                <pre className="text-xs text-slate-300 leading-relaxed whitespace-pre-wrap"
+                  style={{ fontFamily: 'inherit' }}>
+                  {workshopText}
+                </pre>
+              </div>
+            )}
+          </div>
 
           <button
             onClick={generate}

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
-import { reviseDraft, generateSpeakingOutline, fillInPlaceholder } from '../lib/anthropic';
+import { reviseDraft, generateSpeakingOutline, fillInPlaceholder, reviewArgument } from '../lib/anthropic';
 import { storage } from '../lib/storage';
 
 function extractPlaceholders(text) {
@@ -17,6 +17,9 @@ export default function DraftScreen() {
   const [outlineModalOpen, setOutlineModalOpen] = useState(false);
   const [outlineText, setOutlineText] = useState('');
   const [outlineLoading, setOutlineLoading] = useState(false);
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [reviewText, setReviewText] = useState('');
+  const [reviewLoading, setReviewLoading] = useState(false);
   const [activePh, setActivePh] = useState(null);
   const [phInput, setPhInput] = useState('');
   const [phLoading, setPhLoading] = useState(false);
@@ -116,6 +119,21 @@ export default function DraftScreen() {
     }
   }
 
+  async function handleReviewArgument() {
+    if (reviewLoading || !draft) return;
+    setReviewLoading(true);
+    setReviewModalOpen(true);
+    setReviewText('');
+    try {
+      const result = await reviewArgument({ draft, brand: state.brand });
+      setReviewText(result);
+    } catch (err) {
+      setReviewText(`Error: ${err.message || 'Failed to review argument.'}`);
+    } finally {
+      setReviewLoading(false);
+    }
+  }
+
   const versionLabel = (i) => {
     const v = state.draftVersions[i];
     const d = new Date(v.timestamp);
@@ -145,6 +163,38 @@ export default function DraftScreen() {
             <div className="px-6 py-4 border-t border-[#2a2d3e] flex justify-end">
               <button onClick={() => { try { navigator.clipboard.writeText(outlineText) } catch {} }}
                 disabled={outlineLoading || !outlineText}
+                className="text-xs text-slate-300 hover:text-white border border-[#2a2d3e] hover:border-slate-500 px-3 py-1.5 rounded-lg transition-all disabled:opacity-40">
+                Copy to clipboard
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {reviewModalOpen && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/70">
+          <div className="bg-[#141620] border border-[#2a2d3e] rounded-2xl shadow-2xl w-full max-w-2xl mx-6 flex flex-col max-h-[85vh]">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-[#2a2d3e]">
+              <div className="flex flex-col">
+                <span className="text-sm font-semibold text-white">Argument Review</span>
+                <span className="text-xs text-slate-600">Intellectual-honesty pass — flags + rewrites</span>
+              </div>
+              <button onClick={() => setReviewModalOpen(false)}
+                className="text-slate-500 hover:text-white transition-colors text-lg leading-none">✕</button>
+            </div>
+            <div className="flex-1 overflow-y-auto px-6 py-5">
+              {reviewLoading ? (
+                <div className="flex items-center justify-center py-8 gap-2">
+                  <LoadingDots />
+                  <span className="text-sm text-slate-500 ml-2">Pressure-testing the argument…</span>
+                </div>
+              ) : (
+                <pre className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap select-all"
+                  style={{ fontFamily: 'inherit' }}>{reviewText}</pre>
+              )}
+            </div>
+            <div className="px-6 py-4 border-t border-[#2a2d3e] flex justify-end">
+              <button onClick={() => { try { navigator.clipboard.writeText(reviewText) } catch {} }}
+                disabled={reviewLoading || !reviewText}
                 className="text-xs text-slate-300 hover:text-white border border-[#2a2d3e] hover:border-slate-500 px-3 py-1.5 rounded-lg transition-all disabled:opacity-40">
                 Copy to clipboard
               </button>
@@ -269,6 +319,10 @@ export default function DraftScreen() {
           <div className="flex items-center justify-between px-4 py-3 border-b border-[#1e2130]">
             <span className="text-xs text-slate-500 font-mono uppercase tracking-wider">Revisions</span>
             <div className="flex items-center gap-2">
+              <button onClick={handleReviewArgument} disabled={reviewLoading || !draft}
+                className="text-xs text-amber-400 hover:text-amber-300 border border-amber-900/40 hover:border-amber-700/60 px-2.5 py-1 rounded-lg transition-all disabled:opacity-40">
+                {reviewLoading ? 'Reviewing…' : 'Review argument'}
+              </button>
               <button onClick={handleSpeakingOutline} disabled={outlineLoading || !draft}
                 className="text-xs text-slate-300 hover:text-white border border-[#2a2d3e] hover:border-slate-500 px-2.5 py-1 rounded-lg transition-all disabled:opacity-40">
                 {outlineLoading ? 'Building…' : 'Speaking outline'}
