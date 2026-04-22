@@ -7,36 +7,67 @@ const FRAMEWORKS = [
   {
     id: 'pain_process',
     label: 'Pain & Process',
-    tag: 'Beginner',
-    desc: 'Name the pain → give the process to fix it.',
+    tag: 'Direct',
+    desc: 'Name the pain the reader already feels → give the process to resolve it.',
   },
   {
     id: 'pain_concept_process',
     label: 'Pain + Concept + Process',
-    tag: 'Intermediate',
-    desc: 'Name the pain → reframe with a concept → give the process.',
+    tag: 'Reframe',
+    desc: 'Name the pain → introduce a mental model that reframes it → give the process.',
   },
   {
     id: 'perspective_advantage_gamify',
-    label: 'Perspective + Advantage + Gamify',
-    tag: 'Advanced',
-    desc: 'Counter-intuitive angle → unfair advantage → repeatable system.',
+    label: 'Perspective + Advantage + System',
+    tag: 'Counter',
+    desc: 'Challenge a common belief → show the unfair advantage this reveals → make it a system.',
   },
 ]
+
+const READER_STATE_CONFIG = {
+  pain_process: {
+    label: "Reader's entry point",
+    hint: 'What pain or frustration does your reader already feel about this?',
+    placeholder: 'e.g. They feel stuck because they\'re doing everything right but still not moving forward',
+  },
+  pain_concept_process: {
+    label: "Reader's entry point",
+    hint: 'What pain or frustration does your reader already feel about this?',
+    placeholder: 'e.g. They keep trying to get more done but end up burning out and resenting it',
+  },
+  perspective_advantage_gamify: {
+    label: 'Belief to challenge',
+    hint: 'What common belief or assumption are you going to push back on?',
+    placeholder: 'e.g. Most people think working harder automatically means earning more',
+  },
+}
 
 export default function NewsletterLoopScreen({ seed }) {
   const { dispatch, SCREENS } = useApp()
   const brand = storage.getBrand()
 
-  const [topic,     setTopic]     = useState(seed?.topic     || '')
-  const [mainPoint, setMainPoint] = useState(seed?.pipeline?.q5 || '')
-  const [whyNow,    setWhyNow]    = useState('')
-  const [takeaway,  setTakeaway]  = useState(seed?.pipeline?.q7 || '')
-  const [framework, setFramework] = useState('pain_process')
-  const [loading,   setLoading]   = useState(false)
-  const [error,     setError]     = useState('')
+  const [topic,       setTopic]       = useState(seed?.topic || '')
+  const [framework,   setFramework]   = useState('pain_process')
+  const [readerState, setReaderState] = useState('')
+  const [sections,    setSections]    = useState(['', '', ''])
+  const [anchor,      setAnchor]      = useState('')
+  const [loading,     setLoading]     = useState(false)
+  const [error,       setError]       = useState('')
 
-  const canGenerate = topic.trim() && mainPoint.trim() && whyNow.trim() && takeaway.trim()
+  const filledSections = sections.filter(s => s.trim())
+  const canGenerate = topic.trim() && readerState.trim() && filledSections.length >= 2
+
+  function addSection() {
+    if (sections.length < 5) setSections([...sections, ''])
+  }
+
+  function removeSection(i) {
+    if (sections.length > 2) setSections(sections.filter((_, idx) => idx !== i))
+  }
+
+  function updateSection(i, val) {
+    setSections(sections.map((s, idx) => idx === i ? val : s))
+  }
 
   async function generate() {
     setLoading(true)
@@ -46,14 +77,13 @@ export default function NewsletterLoopScreen({ seed }) {
         topic:    topic.trim(),
         pipeline: seed?.pipeline || null,
         frame: {
-          mainPoint: mainPoint.trim(),
-          whyNow:    whyNow.trim(),
-          takeaway:  takeaway.trim(),
+          readerState: readerState.trim(),
+          sections:    sections.filter(s => s.trim()),
+          anchor:      anchor.trim(),
         },
         framework,
         brand,
       })
-      // Auto-save to Drafts tab
       storage.saveDraft({
         id:         Date.now(),
         title:      topic.trim(),
@@ -80,10 +110,12 @@ export default function NewsletterLoopScreen({ seed }) {
           ))}
         </div>
         <p className="text-slate-400 text-sm">Writing your newsletter…</p>
-        <p className="text-slate-600 text-xs">Haiku · ~$0.007 · 700–1000 words</p>
+        <p className="text-slate-600 text-xs">Haiku · ~$0.007 · 700–800 words</p>
       </div>
     )
   }
+
+  const rsConfig = READER_STATE_CONFIG[framework]
 
   return (
     <div className="flex-1 flex flex-col min-h-0 bg-[#0f1117] text-slate-200">
@@ -97,64 +129,30 @@ export default function NewsletterLoopScreen({ seed }) {
         </button>
         <div>
           <p className="text-white font-semibold text-sm">Write Newsletter</p>
-          <p className="text-slate-600 text-xs mt-0.5">Frame your idea — generation takes ~10 seconds</p>
+          <p className="text-slate-600 text-xs mt-0.5">Fill in the pieces — generation takes ~10 seconds</p>
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto px-6 py-6">
-        <div className="max-w-xl mx-auto flex flex-col gap-5">
+        <div className="max-w-xl mx-auto flex flex-col gap-6">
 
           {/* Topic */}
-          <Field label="Topic" hint="The one idea this newsletter is about">
+          <Field label="Topic" hint="The one question or tension this issue answers">
             <textarea
               value={topic}
               onChange={e => setTopic(e.target.value)}
               rows={2}
-              placeholder="e.g. Your phone isn't distracting you — it's training your standards"
+              placeholder="e.g. Why getting better at something can make you worse at knowing when to stop"
               className={input}
             />
           </Field>
 
-          {/* Pipeline context */}
-          {seed?.pipeline && (
-            <PipelineContext pipeline={seed.pipeline} />
-          )}
-
-          {/* 3 framing questions */}
-          <Field label="Main point" hint="The one sentence you want them to leave with">
-            <textarea
-              value={mainPoint}
-              onChange={e => setMainPoint(e.target.value)}
-              rows={2}
-              placeholder="What's the core claim or insight?"
-              className={input}
-            />
-          </Field>
-
-          <Field label="Why now" hint="Why does this matter to your reader this week?">
-            <textarea
-              value={whyNow}
-              onChange={e => setWhyNow(e.target.value)}
-              rows={2}
-              placeholder="What current tension or moment makes this relevant?"
-              className={input}
-              autoFocus={!!seed?.topic}
-            />
-          </Field>
-
-          <Field label="Reader takeaway" hint="What should they do or feel after reading?">
-            <textarea
-              value={takeaway}
-              onChange={e => setTakeaway(e.target.value)}
-              rows={2}
-              placeholder="What's the one shift in thinking or action you want?"
-              className={input}
-            />
-          </Field>
-
-          {/* Framework */}
+          {/* Framework — placed early so Q3 adapts */}
           <div>
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Structure</p>
+            <div className="flex items-baseline gap-2 mb-2">
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Structure</p>
+              <p className="text-xs text-slate-600">How do you want to move the reader?</p>
+            </div>
             <div className="flex flex-col gap-2">
               {FRAMEWORKS.map(f => (
                 <button key={f.id} onClick={() => setFramework(f.id)}
@@ -175,6 +173,77 @@ export default function NewsletterLoopScreen({ seed }) {
             </div>
           </div>
 
+          {/* Pipeline context */}
+          {seed?.pipeline && (
+            <PipelineContext pipeline={seed.pipeline} />
+          )}
+
+          {/* Q3 — adaptive based on framework */}
+          <Field label={rsConfig.label} hint={rsConfig.hint}>
+            <textarea
+              value={readerState}
+              onChange={e => setReaderState(e.target.value)}
+              rows={2}
+              placeholder={rsConfig.placeholder}
+              className={input}
+              autoFocus={!!seed?.topic}
+            />
+          </Field>
+
+          {/* Q4 — section ideas */}
+          <div>
+            <div className="flex items-baseline gap-2 mb-2">
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Key sections</p>
+              <p className="text-xs text-slate-600">What are the 2–5 main points or moves in this piece?</p>
+            </div>
+            <div className="flex flex-col gap-2">
+              {sections.map((s, i) => (
+                <div key={i} className="flex gap-2 items-start">
+                  <span className="text-xs text-slate-700 font-mono mt-3.5 w-4 shrink-0">{i + 1}</span>
+                  <textarea
+                    value={s}
+                    onChange={e => updateSection(i, e.target.value)}
+                    rows={2}
+                    placeholder={
+                      i === 0 ? 'e.g. Why the standard advice fails — and what it misses' :
+                      i === 1 ? 'e.g. The one shift that actually changes the outcome' :
+                      i === 2 ? 'e.g. How to apply this without losing momentum' :
+                      'Add another key point…'
+                    }
+                    className={`${input} flex-1`}
+                  />
+                  {sections.length > 2 && (
+                    <button
+                      onClick={() => removeSection(i)}
+                      className="text-slate-700 hover:text-red-400 transition-colors text-xs mt-3 px-1">
+                      ✕
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+            {sections.length < 5 && (
+              <button
+                onClick={addSection}
+                className="mt-2 text-xs text-slate-600 hover:text-slate-400 transition-colors flex items-center gap-1">
+                <span className="text-base leading-none">+</span> Add section
+              </button>
+            )}
+          </div>
+
+          {/* Q5 — optional anchor material */}
+          <Field
+            label="Anchor material"
+            hint="Optional — a quote, stat, concept, or anecdote to weave in">
+            <textarea
+              value={anchor}
+              onChange={e => setAnchor(e.target.value)}
+              rows={2}
+              placeholder="e.g. "Most people don't have a skill problem, they have a positioning problem." — Dan Koe"
+              className={input}
+            />
+          </Field>
+
           {error && (
             <p className="text-xs text-red-400 bg-red-900/20 border border-red-800/30 rounded-xl px-4 py-3">{error}</p>
           )}
@@ -186,6 +255,14 @@ export default function NewsletterLoopScreen({ seed }) {
           >
             Generate newsletter →
           </button>
+
+          {!canGenerate && (
+            <p className="text-xs text-slate-700 text-center -mt-2">
+              {!topic.trim() && 'Add a topic · '}
+              {!readerState.trim() && 'Fill in the reader entry point · '}
+              {filledSections.length < 2 && `Add ${2 - filledSections.length} more section${2 - filledSections.length !== 1 ? 's' : ''}`}
+            </p>
+          )}
 
         </div>
       </div>
@@ -210,7 +287,9 @@ function Field({ label, hint, children }) {
 function PipelineContext({ pipeline }) {
   const fields = [
     pipeline.q4 && { label: 'Opening angle', value: pipeline.q4 },
-    pipeline.q6 && { label: 'Caveat',         value: pipeline.q6 },
+    pipeline.q5 && { label: 'Core insight',  value: pipeline.q5 },
+    pipeline.q6 && { label: 'Caveat',        value: pipeline.q6 },
+    pipeline.q7 && { label: 'Payoff',        value: pipeline.q7 },
   ].filter(Boolean)
 
   if (!fields.length) return null

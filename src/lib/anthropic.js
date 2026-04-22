@@ -812,14 +812,20 @@ Return ONLY the JSON. No markdown fences. No commentary.`
 // ── Newsletter Loop ───────────────────────────────────────────────────────────
 
 export async function generateNewsletter({ topic, pipeline, frame, framework, brand }) {
-  const voice  = brand.voiceFingerprint || ''
-  const name   = brand.name || 'RUFIO'
-  const nlName = brand.newsletterName || 'Lessons Learned'
+  const voice      = brand.voiceFingerprint || ''
+  const name       = brand.name || 'RUFIO'
+  const nlName     = brand.newsletterName || 'Lessons Learned'
+  const standsFor  = brand.standsFor || brand.standFor || ''
+  const standsAgainst = brand.standsAgainst || brand.standAgainst || ''
+  const pillars    = (brand.pillars || []).join(', ')
 
   const frameworkGuide = {
-    pain_process:         'Name the pain the reader already feels → give the specific process to resolve it. Direct and actionable.',
-    pain_concept_process: 'Name the pain → introduce a reframing concept or mental model → give the process. For readers who need a new lens before the how-to.',
-    perspective_advantage_gamify: 'Share a counter-intuitive perspective → show the unfair advantage it creates → turn it into a repeatable system.',
+    pain_process:
+      'PAIN → PROCESS: Open with the specific pain or frustration the reader already feels (name it plainly, not as a concept). Work through the process that resolves it. End with the transformation — what life looks like after. Every section serves the through-line from problem to resolution.',
+    pain_concept_process:
+      'PAIN → CONCEPT → PROCESS: Open with the pain. Introduce a mental model or reframe that makes the problem make sense in a new way — name it something the reader would actually say. Then give the process that follows from that reframe. The concept is the pivot; without it, the process feels arbitrary.',
+    perspective_advantage_gamify:
+      'PERSPECTIVE → ADVANTAGE → SYSTEM: Open with a counter-intuitive claim — something that sounds wrong until you think about it. Show the specific unfair advantage this perspective creates for people who hold it. Then turn it into a repeatable system the reader can run. The system should feel like a natural consequence of the perspective, not a tacked-on how-to.',
   }
 
   const pipelineContext = [
@@ -829,27 +835,53 @@ export async function generateNewsletter({ topic, pipeline, frame, framework, br
     pipeline?.q7 && `Payoff for the reader: ${pipeline.q7}`,
   ].filter(Boolean).join('\n')
 
+  // Layer 1: Dan Koe structural rules (hardcoded)
+  // Layer 2: Brand guardrails (from settings)
+  // Layer 3: Piece-specific inputs (from the form)
   const system = `You are ghostwriting a newsletter issue for ${name} (${nlName}).
 
-VOICE:
+VOICE FINGERPRINT:
 ${voice}
+
+BRAND GUARDRAILS:
+Stands for: ${standsFor}
+Stands against: ${standsAgainst}
+Content pillars: ${pillars}
+
+STRUCTURAL RULES (follow these exactly):
+- One topic. One tension. Everything in the piece serves it.
+- Do not open with "I" as the first word. Start in the middle — with the problem, the contradiction, or the claim.
+- Develop each key section with this micro-structure: state the point plainly → explain why it's true (concrete, specific) → tell the reader what to do with it.
+- Short paragraphs — 2–3 sentences maximum. White space is part of the design.
+- No headers. No bullet lists. No numbered lists. Pure prose.
+- Conversational register — write like you're talking to one specific person who trusts you.
+- Do not moralize or lecture. Make the insight land through specificity, not emphasis.
+- Target length: 700–800 words.
+- Close with exactly two lines, nothing after: "Thank you for everything you do." then a blank line then "Fights On,\\n${name}"
 
 FRAMEWORK: ${frameworkGuide[framework] || frameworkGuide.pain_process}
 
-RULES:
-- 700–1000 words. No more.
-- No bullet points. No headers. No listicles.
-- Short paragraphs — 2–3 sentences max. White space is intentional.
-- Never open the newsletter with "I" as the first word.
-- Close with exactly: "Thank you for everything you do." then a blank line then "Fights On, ${name}"
+Write the full newsletter. No preamble, no commentary — the newsletter only.`
 
-Write the full newsletter. Output nothing else.`
+  const sectionsBlock = frame.sections.length
+    ? `\nKey sections to develop:\n${frame.sections.map((s, i) => `${i + 1}. ${s}`).join('\n')}`
+    : ''
+
+  const anchorBlock = frame.anchor
+    ? `\nAnchor material to weave in: ${frame.anchor}`
+    : ''
+
+  const pipelineBlock = pipelineContext
+    ? `\nPipeline context:\n${pipelineContext}`
+    : ''
+
+  const readerStateLabel = framework === 'perspective_advantage_gamify'
+    ? 'Belief to challenge'
+    : "Reader's entry point (the pain they already feel)"
 
   const user = `Topic: ${topic}
-${pipelineContext ? `\nPipeline notes:\n${pipelineContext}\n` : ''}
-Main point: ${frame.mainPoint}
-Why this matters to the reader right now: ${frame.whyNow}
-What I want the reader to do or feel after reading: ${frame.takeaway}`
+
+${readerStateLabel}: ${frame.readerState}${sectionsBlock}${anchorBlock}${pipelineBlock}`
 
   const response = await callAPI({
     model: 'claude-haiku-4-5-20251001',
