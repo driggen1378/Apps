@@ -105,6 +105,12 @@ export const storage = {
   deleteDraft: (id) => {
     set('ll-drafts', get('ll-drafts', []).filter(d => d.id !== id))
   },
+  getNotes:   () => get('ll-notes', []),
+  saveNote:   (text) => {
+    const existing = get('ll-notes', [])
+    set('ll-notes', [{ id: Date.now(), text: text.trim(), savedAt: new Date().toISOString() }, ...existing])
+  },
+  deleteNote: (id) => set('ll-notes', get('ll-notes', []).filter(n => n.id !== id)),
   getDraftSeed: () => {
     const seed = localStorage.getItem('ll-draft-seed')
     if (seed) localStorage.removeItem('ll-draft-seed')

@@ -7,10 +7,14 @@ import DraftsScreen from './screens/DraftsScreen'
 import Roadmap from './components/Roadmap'
 import WeeklyScreen from './screens/WeeklyScreen'
 import NewsletterScreen from './screens/NewsletterScreen'
+import QuickNoteScreen from './screens/QuickNoteScreen'
+import BankScreen from './screens/BankScreen'
 import { storage } from './lib/storage'
 
 const NAV = [
-  { id: 'weekly',     label: 'Weekly',        icon: '📅' },
+  { id: 'quick-note', label: 'Quick Note',     icon: '⚡' },
+  { id: 'bank',       label: 'Bank',           icon: '🗂️' },
+  { id: 'weekly',     label: 'Weekly',         icon: '📅' },
   { id: 'ideas',      label: 'Ideas',          icon: '💡' },
   { id: 'newsletter', label: 'Newsletter',     icon: '✉️' },
   { id: 'create',     label: 'Create',         icon: '✍️' },
@@ -124,6 +128,8 @@ function AppInner() {
 
         {/* Section content */}
         <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+          {section === 'quick-note' && <QuickNoteScreen />}
+          {section === 'bank'       && <BankScreen />}
           {section === 'weekly'     && <WeeklyScreen onNavigate={navigate} />}
           {section === 'ideas'      && <Ideas onDraftFromIdea={handleDraftFromIdea} />}
           {section === 'newsletter' && <NewsletterScreen />}
