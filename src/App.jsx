@@ -19,7 +19,7 @@ const NAV = [
   { id: 'newsletter', label: 'Newsletter',     icon: '✉️' },
   { id: 'create',     label: 'Create',         icon: '✍️' },
   { id: 'drafts',     label: 'Drafts',         icon: '📝' },
-  { id: 'roadmap',    label: 'Roadmap',        icon: '🗺️' },
+  { id: 'roadmap',    label: 'Launch Plan',    icon: '📊' },
   { id: 'settings',   label: 'Brand Settings', icon: '⚙️' },
 ]
 
