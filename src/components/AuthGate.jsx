@@ -2,8 +2,12 @@ import { useState, useEffect } from 'react'
 import { supabase, pullFromCloud, pushMissingToCloud } from '../lib/supabase'
 
 export default function AuthGate({ children }) {
-  const [user,  setUser]  = useState(null)
-  const [ready, setReady] = useState(false)
+  const [user,    setUser]    = useState(null)
+  const [ready,   setReady]   = useState(false)
+  const [skipped, setSkipped] = useState(() => localStorage.getItem('ll-skip-login') === '1')
+
+  // If the user already chose local mode, skip auth entirely
+  if (skipped) return children
 
   useEffect(() => {
     // Hard timeout — app always opens within 3s regardless of network
@@ -31,11 +35,11 @@ export default function AuthGate({ children }) {
   }, [])
 
   if (!ready) return <Splash />
-  if (!user)  return <LoginScreen />
+  if (!user)  return <LoginScreen onSkip={() => { localStorage.setItem('ll-skip-login', '1'); setSkipped(true) }} />
   return children
 }
 
-function LoginScreen() {
+function LoginScreen({ onSkip }) {
   const [email,   setEmail]   = useState('')
   const [sent,    setSent]    = useState(false)
   const [loading, setLoading] = useState(false)
@@ -56,6 +60,8 @@ function LoginScreen() {
   function handleKey(e) {
     if (e.key === 'Enter') sendLink()
   }
+
+  const isNetworkError = error && /failed to fetch/i.test(error)
 
   return (
     <div className="fixed inset-0 bg-[#071020] flex items-center justify-center p-6">
@@ -86,7 +92,13 @@ function LoginScreen() {
               autoFocus
               className="w-full bg-[#112040] border border-[#2a4070] rounded-lg px-4 py-3 text-white text-sm placeholder-[#4a6080] focus:outline-none focus:border-[#c5a028] transition-colors"
             />
-            {error && <p className="text-red-400 text-xs">{error}</p>}
+            {error && (
+              <p className="text-red-400 text-xs">
+                {isNetworkError
+                  ? "Can't reach auth server. Use local mode below."
+                  : error}
+              </p>
+            )}
             <button
               onClick={sendLink}
               disabled={!email.trim() || loading}
@@ -94,6 +106,18 @@ function LoginScreen() {
             >
               {loading ? 'Sending…' : 'Send magic link →'}
             </button>
+
+            <div className="border-t border-[#1e3a5f] pt-4">
+              <button
+                onClick={onSkip}
+                className="w-full py-2.5 border border-[#2a4070] text-[#7a9ab5] text-sm rounded-lg hover:text-white hover:border-[#4a6080] transition-colors"
+              >
+                Continue without signing in →
+              </button>
+              <p className="text-[#344a60] text-xs mt-2 text-center">
+                Local mode — data stays on this device, no cloud sync.
+              </p>
+            </div>
           </div>
         ) : (
           <div className="flex flex-col gap-4">
