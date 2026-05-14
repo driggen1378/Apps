@@ -236,7 +236,7 @@ export default function Roadmap() {
   }
 
   return (
-    <div className="flex flex-col h-full min-h-0 bg-[#0a1628] text-white overflow-auto">
+    <div className="flex flex-col bg-[#0a1628] text-white overflow-y-auto h-full">
       <Tooltip {...tooltip} />
 
       {/* Header strip */}
@@ -407,7 +407,7 @@ export default function Roadmap() {
       </div>
 
       {/* Two-column panel */}
-      <div className="flex-1 min-h-0 px-6 py-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="px-6 py-4 grid grid-cols-1 md:grid-cols-2 gap-4">
 
         <div className="flex flex-col gap-3">
           <h3 className="text-xs font-bold uppercase tracking-wider text-[#4a6080]">Task Detail</h3>
@@ -420,7 +420,7 @@ export default function Roadmap() {
           )}
         </div>
 
-        <div className="flex flex-col gap-3 min-h-0">
+        <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
             <h3 className="text-xs font-bold uppercase tracking-wider text-[#4a6080]">Assumptions Register</h3>
             <div className="flex gap-1">
@@ -440,7 +440,7 @@ export default function Roadmap() {
               ))}
             </div>
           </div>
-          <div className="flex flex-col gap-2 overflow-y-auto">
+          <div className="flex flex-col gap-2">
             {filteredAssumptions.map(a => (
               <AssumptionCard
                 key={a.id}
