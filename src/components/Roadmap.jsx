@@ -174,6 +174,12 @@ export default function Roadmap() {
 
   const months = planData.meta.months
 
+  // Today line — position as % across the 15-month window
+  const planStart = new Date(2026, 4, 1)  // May 1 2026
+  const planEnd   = new Date(2027, 7, 1)  // Aug 1 2027 (end of month 15)
+  const todayPct  = Math.min(100, Math.max(0, (Date.now() - planStart) / (planEnd - planStart) * 100))
+  const todayInRange = Date.now() >= planStart && Date.now() <= planEnd
+
   function isDimmed(task) {
     if (!selectedAssumId) return false
     const linkedTasks = ASSUME_MAP[selectedAssumId]?.linked_tasks || []
@@ -319,6 +325,14 @@ export default function Roadmap() {
                             ))}
                           </div>
 
+                          {todayInRange && (
+                            <div style={{
+                              position: 'absolute', top: 0, bottom: 0, width: 2,
+                              background: '#e05c28', left: `${todayPct}%`,
+                              zIndex: 4, opacity: 0.85, pointerEvents: 'none',
+                            }} />
+                          )}
+
                           <div
                             style={{
                               position: 'absolute',
@@ -377,6 +391,14 @@ export default function Roadmap() {
                     <div key={m.n} style={{ borderLeft: m.n > 1 ? '1px solid #0f1f35' : 'none' }} />
                   ))}
                 </div>
+
+                {todayInRange && (
+                  <div style={{
+                    position: 'absolute', top: 0, bottom: 0, width: 2,
+                    background: '#e05c28', left: `${todayPct}%`,
+                    zIndex: 4, opacity: 0.85, pointerEvents: 'none',
+                  }} />
+                )}
 
                 {planData.milestones.map(ms => {
                   const leftPct = ((ms.month - 1) / 15 * 100) + (1 / 15 * 50)
