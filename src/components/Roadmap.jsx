@@ -1,189 +1,449 @@
-import { useState, useRef, useEffect, forwardRef } from 'react'
+import { useState, useRef, forwardRef } from 'react'
 
-const planData = {
-  "meta": {
-    "title": "USAFWS-Credentialed Solo Practice — 15-Month Launch",
-    "window": "May 2026 – Jul 2027 (15 months)",
-    "capacity": "15–20 hrs/wk (realistic load)",
-    "primary_icp": "OD Manager / Org Effectiveness · Tech/AI/SaaS + Gov/Defense",
-    "secondary_icp": "Finance · Energy · Healthcare · Manufacturing",
-    "target": "Job offer signed + dissertation topic locked + LLC live",
-    "months": [
-      {"n":1,"label":"May","year":"26"},{"n":2,"label":"Jun","year":"26"},{"n":3,"label":"Jul","year":"26"},
-      {"n":4,"label":"Aug","year":"26"},{"n":5,"label":"Sep","year":"26"},{"n":6,"label":"Oct","year":"26"},
-      {"n":7,"label":"Nov","year":"26"},{"n":8,"label":"Dec","year":"26"},{"n":9,"label":"Jan","year":"27"},
-      {"n":10,"label":"Feb","year":"27"},{"n":11,"label":"Mar","year":"27"},{"n":12,"label":"Apr","year":"27"},
-      {"n":13,"label":"May","year":"27"},{"n":14,"label":"Jun","year":"27"},{"n":15,"label":"Jul","year":"27"}
-    ]
+// ─── Phase definitions ────────────────────────────────────────────────────────
+const PHASES = [
+  {
+    id: 0,
+    label: 'Phase 0',
+    name: 'Asset 1 Experimentation',
+    active: true,
+    what: [
+      'B2 main episode weekly — through-question stated in intros (5-interview A21 experiment)',
+      'B2 solo source-material segment monthly (Jocko mechanic: institution-building/instructor-pedagogy)',
+      'B2 reach videos + shorts continuing',
+      'LinkedIn 3–5 native posts/wk + 1–2 carousels/mo from brand-ddc captures',
+      'B4a newsletter weekly — primary harvest surface for DDC captures',
+      'B3 guest acquisition at low cadence (DM ladder, category-based)',
+      'A1a + A1b job applications at 3–4/day, 70/30 split',
+      'C1 chair conversation initiated early',
+      'D1 Phase 0 reading: Kleon (Show Your Work), Dunford (Obviously Awesome)',
+    ],
+    gate: 'Asset 1 compounding signal — sustained sub growth, warm DM inbound from ICP, OR convergent topic signal from 5-interview A21 experiment, OR ICP-quality engagement on at least one domain × surface in brand-ddc harvest tracker (A22).',
+    gate_tests: ['A21', 'A22', 'A9'],
   },
-  "workstreams": [
-    {"id":"job","name":"Job Search","barColor":"#85B7EB","barBg":"#112842"},
-    {"id":"llc","name":"LLC & Brand","barColor":"#5DCAA5","barBg":"#0F2E25"},
-    {"id":"diss","name":"Dissertation","barColor":"#EF9F27","barBg":"#2F2208"}
+  {
+    id: 1,
+    label: 'Phase 1',
+    name: 'Asset 1 Compounding',
+    active: false,
+    what: [
+      'B3 cadence increases — warm-tie velocity now justified by audience proof',
+      'B4b dissertation-adjacent IP artifacts begin circulating (no paywall yet)',
+      'B1 LLC formation moves from deferred to active (~$425, 1–2 wk)',
+      'D2 self-directed curriculum: Pulizzi (Content Inc.), Challenger Sale or SPIN Selling',
+    ],
+    gate: 'Dissertation defended OR paid pilot opportunity surfaces (whichever first).',
+    gate_tests: ['A20', 'A11'],
+  },
+  {
+    id: 2,
+    label: 'Phase 2',
+    name: 'Asset 2 Ships',
+    active: false,
+    what: [
+      'Book draft from dissertation — methodology codified',
+      'Paid speaking begins (Stumpf trajectory: persona public, method private)',
+      'B4b IP artifacts gate to paid-product form',
+      'Methodology stays private — productized version held back',
+    ],
+    gate: 'Delivery vehicle proven viable via 1–2 paid pilots.',
+    gate_tests: ['A11', 'A19'],
+  },
+  {
+    id: 3,
+    label: 'Phase 3',
+    name: 'Asset 3 Build',
+    active: false,
+    what: [
+      'Intensive-format paid event (Forge-shape) OR retainer advisory (Kotter/BTS-shape)',
+      'Methodology operates as spine of whichever delivery vehicle buyer base supports',
+      'B4b artifacts become paid-product collateral',
+      'D3 reading: Simon (Pricing Man), deep-read whichever sales book skimmed in Phase 1',
+    ],
+    gate: 'Delivery vehicle generating sustained engagement pipeline.',
+    gate_tests: ['A11'],
+  },
+  {
+    id: 4,
+    label: 'Phase 4',
+    name: 'Asset 4 Product',
+    active: false,
+    what: [
+      'Cohort or productized methodology',
+      'Book published (if not done in Phase 2)',
+      'Possible certification body (Coughlin/RBLP shape)',
+      'D4 reading: Hamilton Helmer (7 Powers)',
+    ],
+    gate: null,
+    gate_tests: [],
+  },
+]
+
+// ─── Plan data ────────────────────────────────────────────────────────────────
+const planData = {
+  meta: {
+    title: 'Solo Practice Launch — Micro v3.8',
+    window: 'May 2026 – Jul 2027 · 15 months',
+    constraint: 'Vocational direction is the binding constraint (not cash survival)',
+    runway: 'Peak ~$42K mid-Jul · floor ~$12K not until mid-2027',
+    metreaEnd: 'Metrea final day: 2026-06-12',
+    months: [
+      {n:1,label:'May',year:'26'},{n:2,label:'Jun',year:'26'},{n:3,label:'Jul',year:'26'},
+      {n:4,label:'Aug',year:'26'},{n:5,label:'Sep',year:'26'},{n:6,label:'Oct',year:'26'},
+      {n:7,label:'Nov',year:'26'},{n:8,label:'Dec',year:'26'},{n:9,label:'Jan',year:'27'},
+      {n:10,label:'Feb',year:'27'},{n:11,label:'Mar',year:'27'},{n:12,label:'Apr',year:'27'},
+      {n:13,label:'May',year:'27'},{n:14,label:'Jun',year:'27'},{n:15,label:'Jul',year:'27'},
+    ],
+  },
+  workstreams: [
+    {id:'job',   name:'A · Job Search',    barColor:'#85B7EB', barBg:'#112842'},
+    {id:'brand', name:'B · Asset Stack',   barColor:'#5DCAA5', barBg:'#0F2E25'},
+    {id:'diss',  name:'C · Dissertation',  barColor:'#EF9F27', barBg:'#2F2208'},
+    {id:'curric',name:'D · Curriculum',    barColor:'#B87FD4', barBg:'#2A1542'},
   ],
-  "tasks": [
-    {"id":"A1","name":"Submit applications (5–10/wk)","ws":"job","start":1,"duration":6,"label":"apply"},
-    {"id":"A2","name":"Convert to interviews","ws":"job","start":2,"duration":5,"label":"screen→interview"},
-    {"id":"A3","name":"Close an offer (DP1)","ws":"job","start":4,"duration":4,"label":"close","linked_assumptions":["A16"]},
-    {"id":"B1","name":"Form LLC + banking + domain","ws":"llc","start":1,"duration":1,"label":"setup","linked_assumptions":["A13"]},
-    {"id":"B2","name":"LinkedIn 3×/wk + ICP commenting","ws":"llc","start":1,"duration":15,"label":"content","linked_assumptions":["A9"]},
-    {"id":"B3","name":"Informational interviews (1–2/wk)","ws":"llc","start":2,"duration":8,"label":"network","linked_assumptions":["A16"]},
-    {"id":"B4","name":"Dissertation-adjacent IP artifacts","ws":"llc","start":4,"duration":12,"label":"IP artifacts","linked_assumptions":["A11"]},
-    {"id":"C1","name":"Chair conversations","ws":"diss","start":9,"duration":3,"label":"chair","linked_assumptions":["A15","A7"]},
-    {"id":"C2","name":"Lock topic + form committee","ws":"diss","start":11,"duration":1,"label":"topic lock","linked_assumptions":["A15"]},
-    {"id":"C3","name":"IRB protocol + data collection prep","ws":"diss","start":12,"duration":3,"label":"IRB","linked_assumptions":["A7"]},
-    {"id":"C4","name":"UNC coursework (continuous)","ws":"diss","start":1,"duration":15,"label":"coursework"}
+  tasks: [
+    // A — Job Search
+    {id:'A1a', ws:'job',   start:1, duration:8, label:'defense/intel (~70%)',
+     name:'A1a · Income-protective lane (~70%)', status:'in progress',
+     linked_assumptions:['A14-defense','A16a','A17','A18'],
+     notes:'Target: cleared defense/intel/training/exercise/capture roles where USAFWS credential is premium. 3–4 high-customization apps/day combined. Leidos Intel Exercise Planner identified as strongest single fit.'},
+    {id:'A1b', ws:'job',   start:1, duration:8, label:'OD-bridge (~30%)',
+     name:'A1b · OD-pivot lane (~30%)', status:'in progress',
+     linked_assumptions:['A14-tech','A16b','A18'],
+     notes:'Target bridge titles: Workforce Transformation, Change Mgmt, Human Capital — Defense, Learning Strategy, OD Effectiveness. Direct OD Manager at top consultancies = stretch only. Deloitte auto-reject 2026-05-XX is first data point.'},
+    {id:'A2',  ws:'job',   start:2, duration:7, label:'screen → interview',
+     name:'A2 · Convert applications to interviews', status:'not started',
+     linked_assumptions:['A16a','A16b'],
+     notes:'Lane-aware prep cycle. Track conversion separately for A1a and A1b — different competency models, different STAR emphasis. DP2 Day-14/30/60 reviews gate lane rebalancing.'},
+    {id:'A3',  ws:'job',   start:3, duration:6, label:'close offer (DP1)',
+     name:'A3 · Close an offer', status:'not started',
+     linked_assumptions:['A16a','A16b','A17'],
+     notes:'Surface outside-practice/moonlighting policy before signing. Get it in writing. Firing DP1 restructures all workstreams.'},
+
+    // B — Asset Stack
+    {id:'B1',  ws:'brand', start:7, duration:1, label:'LLC · Phase 1 gate',
+     name:'B1 · LLC formation (deferred until Phase 1)', status:'deferred',
+     linked_assumptions:['A20'],
+     notes:'~$425, 1–2 weeks evening effort. Deferred until Asset 1 compounding signal OR paid pilot surfaces. Formation premature without compounding evidence.'},
+    {id:'B2',  ws:'brand', start:1, duration:15, label:'Asset 1 broadcast',
+     name:'B2 · Podcast / YouTube + LinkedIn', status:'in progress',
+     linked_assumptions:['A21','A22','A9'],
+     notes:'32 episodes in, ~54 subs, 27K views/157 watch hours. Through-question: "what did you learn doing this." 5-interview forward-validation experiment scheduled. 3–5 LinkedIn posts/wk native from brand-ddc captures. Eden for title engineering.'},
+    {id:'B3',  ws:'brand', start:1, duration:15, label:'network + guest acq',
+     name:'B3 · Networking + guest acquisition', status:'not started',
+     linked_assumptions:['A9','A11','A21'],
+     notes:'Koe 7-step DM ladder applied three ways: (1) warm B2B ties in defense human capital + OD/L&D, (2) category-based guest acquisition, (3) USAFWS alumni outreach. 2–3 touches/week. NOT 30 min/day.'},
+    {id:'B4a', ws:'brand', start:1, duration:15, label:'newsletter (weekly)',
+     name:'B4a · Newsletter — weekly codification practice', status:'in progress',
+     linked_assumptions:['A21','A22'],
+     notes:'Williamson mechanic: one extracted lesson + one personal lesson per issue, sourced from brand-ddc captures of the week. Already running on Substack via yfhpodcast.com. Highest per-reader signal surface — subscribers self-selected hard.'},
+    {id:'B4b', ws:'brand', start:7, duration:9, label:'IP artifacts · Ph1+',
+     name:'B4b · Dissertation-adjacent IP artifacts', status:'not started',
+     linked_assumptions:['A11','A19','A20'],
+     notes:'Debrief framework one-pagers, competency-model templates, worked examples of operating-model translation. Publish on LinkedIn or gated downloads. Draft/circulation form only — NOT paid-product until Phase 1 gate clears (A20).'},
+
+    // C — Dissertation
+    {id:'C1',  ws:'diss',  start:1, duration:2, label:'chair convo',
+     name:'C1 · Chair conversation', status:'not started',
+     linked_assumptions:['A15'],
+     notes:'Four scope-sequencing options: (1) pedagogy for templateless career field — DT, (2) high-performer pipeline burnout — RCA/PE, (3) elite institution implicit excellence transmission — RCA, (4) operator-interview extraction methodology — DT (tightest convergence with A19 + A21). Chair conversation is forcing function for all of C2–C6.'},
+    {id:'C2',  ws:'diss',  start:2, duration:13, label:'scope resolution',
+     name:'C2 · Scope resolution (6 scopes)', status:'not started',
+     linked_assumptions:['A15','A7'],
+     notes:'Six scopes: topic (Year 2 mid-term), site (before topic confirm), meaning (Year 2 Sem 2), practice (Year 2 mid-term), methodological (Year 3 Sem 1), instrument (Year 3 Sem 2 proposal). NOT resolved independently — site constrains topic, methodology forced by problem state.'},
+    {id:'C3',  ws:'diss',  start:1, duration:15, label:'coursework (continuous)',
+     name:'C3 · Coursework + milestones', status:'in progress',
+     notes:'Continuous per program calendar. Comps mid-Year 2. Maintain enrollment. Final defense passes = done.'},
+    {id:'C4',  ws:'diss',  start:12, duration:4, label:'IP harvest',
+     name:'C4 · IP harvesting from dissertation work', status:'not started',
+     linked_assumptions:['A11','A19','A20'],
+     notes:'As scope resolves and data collection runs, harvest patterns into B4 IP artifacts. This is where C and B converge: dissertation produces codified IP (Asset 2), B4 is its early-prototype layer, B2 audience is its eventual market.'},
+
+    // D — Curriculum
+    {id:'D1',  ws:'curric', start:1, duration:3, label:'Kleon + Dunford',
+     name:'D1 · Phase 0 reading', status:'not started',
+     notes:'Kleon Show Your Work (2 evenings) — frame for podcast + LinkedIn during job hunt. Dunford Obviously Awesome (1 week) — apply to resume header positioning across both lanes.'},
+    {id:'D2',  ws:'curric', start:7, duration:3, label:'Pulizzi + Sales',
+     name:'D2 · Phase 1 reading (in-role)', status:'not started',
+     notes:'Pulizzi Content Inc. (2 weeks, in role) — apply to podcast monetization roadmap + B4 artifacts. Skim Challenger Sale OR SPIN Selling — pick based on which lane landed.'},
+    {id:'D3',  ws:'curric', start:13, duration:3, label:'Pricing + deep Sales',
+     name:'D3 · Phase 2 reading', status:'not started',
+     notes:'Deep-read whichever sales book skimmed in Phase 1. Hermann Simon Confessions of the Pricing Man — pricing is highest-leverage skill at this phase.'},
   ],
-  "assumptions": [
-    {
-      "id":"A16",
-      "category":"Job Search",
-      "claim":"Resume positions credibly for OD Manager roles in target market",
-      "evidence_quality":"weak",
-      "plan_elements_affected":"Entire job-first strategy; timeline to DP1",
-      "justification":"USAFWS credential + doctoral program + Metrea W-2 makes a plausible case. Civilian L&D vocabulary, HRIS/LMS platform fluency, and people-analytics KPIs are gaps that may show in screening.",
-      "fail_signal":"Zero recruiter responses after 30+ submissions → resume signal weaker than estimated. Zero interviews after 50+ → screening filter catching something specific.",
-      "reassessment_trigger":"After 30 submissions for response rate; after 50 for interview conversion.",
-      "linked_tasks":["A1","A2","A3","B3"]
-    },
-    {
-      "id":"A14",
-      "category":"Job Search",
-      "claim":"USAFWS credential reads as background (not discount) once inside a tech/defense firm",
-      "evidence_quality":"moderate",
-      "plan_elements_affected":"Target vertical selection; positioning during interviews",
-      "justification":"Job-first entry sidesteps the credential discount: you are being hired as an employee, not selling solo into a discounting market. Once inside, the credential reads as background; what gets evaluated is the work product.",
-      "fail_signal":"Recruiters consistently flag the military credential as a mismatch signal despite tailored positioning.",
-      "reassessment_trigger":"After first 10 recruiter conversations — note any pattern of credential-as-discount feedback.",
-      "linked_tasks":["A1","A2"]
-    },
-    {
-      "id":"A13",
-      "category":"Foundational",
-      "claim":"Cash runway covers the job-search window without income pressure",
-      "evidence_quality":"weak",
-      "plan_elements_affected":"Every timeline element; pivot triggers; force-compress decision",
-      "justification":"Plan built assuming runway holds. If Metrea ends or compresses, the force-compress trigger fires: take any L&D/OD-adjacent role for cash.",
-      "fail_signal":"Cash anxiety surfaces before an offer lands. Detection: user reports runway below 3 months.",
-      "reassessment_trigger":"Revisit within 30 days of plan kickoff. Compute actual runway now.",
-      "notes":"Most fragile assumption. Naming it explicitly is the minimum protection.",
-      "linked_tasks":["B1"]
-    },
-    {
-      "id":"A9",
-      "category":"Content & Brand",
-      "claim":"LinkedIn content compounds to reliable inbound by M6–M12",
-      "evidence_quality":"weak",
-      "plan_elements_affected":"Content cadence (B2); network-building during job-first years",
-      "justification":"Consistent LinkedIn content at 3×/wk + ICP commenting compounds to at least 3 ICP DMs/month by M12 — conditional on applied-insight quality, not generic-credential content.",
-      "fail_signal":"Zero inbound DMs from target buyers despite 12 months of consistent 3×/wk posting → content is generic-credentialed, rebuild around dissertation-adjacent insight.",
-      "reassessment_trigger":"Month 6 for early signal; Month 12 for compounding evidence.",
-      "linked_tasks":["B2"]
-    },
-    {
-      "id":"A11",
-      "category":"Long Arc",
-      "claim":"B2B2C credentialing body is the $1M/year path (years 15–20)",
-      "evidence_quality":"moderate",
-      "plan_elements_affected":"Year-2+ strategy; dissertation IP shape; partner-organization targeting",
-      "justification":"Project-based consulting math doesn't pencil for $1M solo. The paths are: owned credentialing body (Coughlin model), productized IP + speaking/licensing, or retainer-anchored advisory at $20–30K/mo. Job-first arc builds toward one of these. Dissertation is the IP that makes any defensible.",
-      "fail_signal":"T3 reached and no credentialing partner interest after explicit outreach → pivot to retainer-anchored advisory or productized IP + speaking.",
-      "reassessment_trigger":"Annual, at each plan-anniversary review.",
-      "linked_tasks":["B4"]
-    },
-    {
-      "id":"A15",
-      "category":"Dissertation",
-      "claim":"Debrief phenomenology is the right dissertation framing",
-      "evidence_quality":"moderate",
-      "plan_elements_affected":"Dissertation direction (C1, C2); IP shape; year-2 commercial extension",
-      "justification":"Weighted decision matrix across 7 criteria scores debrief at 3.85 vs. institutional at 3.60. Debrief is discrete and teachable; institutional thesis requires sustained access no longer available post-active-duty.",
-      "fail_signal":"Chair enthusiasm for institutional framing AND willingness to broker access. OR: lukewarm reception from 2 consecutive chairs.",
-      "reassessment_trigger":"First chair conversation (M9). Topic-lock deadline at Capstone Seminar 1 (M11).",
-      "linked_tasks":["C1","C2"]
-    },
-    {
-      "id":"A7",
-      "category":"Dissertation",
-      "claim":"Dissertation co-anchors with practice via IRB firewall",
-      "evidence_quality":"moderate",
-      "plan_elements_affected":"Chair conversations (C1); IRB protocol (C3); discovery interview population",
-      "justification":"Subjects (USAFWS instructor alumni) and clients/network contacts are structurally non-overlapping populations under Federal Common Rule 45 CFR 46.",
-      "fail_signal":"Chair raises subject/client overlap. OR: UNC IRB flags dual-role conflict.",
-      "reassessment_trigger":"First chair conversation (M9), then at IRB submission.",
-      "linked_tasks":["C1","C3"]
-    }
+  assumptions: [
+    // Job Search
+    {id:'A14-defense', category:'Job Search', status:'holds', evidence_quality:'moderate',
+     claim:'USAFWS credential is a premium signal in cleared defense/intel/training lanes',
+     justification:'Defense contractors screen for clearance + USAFWS-tier credentials explicitly. Intel exercise planning roles (Leidos, BAH, JT4) treat the credential as table-stakes differentiation.',
+     fail_signal:'Zero recruiter responses after 20 A1a submissions → lane anchoring weaker than estimated. Have cleared-defense recruiter critique the resume.',
+     reassessment_trigger:'After 20 A1a submissions for response rate; after 10 recruiter conversations for credential feedback.',
+     linked_tasks:['A1a','A2']},
+    {id:'A14-tech', category:'Job Search', status:'holds', evidence_quality:'moderate',
+     claim:'USAFWS credential creates a discount in mainstream-tech OD direct-title applications',
+     justification:'Conventional OD-title history is the screening filter at tech/consulting. Military background reads as vertical mismatch without translation. Deloitte auto-reject (2026-05-XX) is first data point confirming this.',
+     fail_signal:'Bridge titles auto-reject at same rate as direct OD Manager → discount is structural, not title-dependent. Stop both; seek referral-only entry.',
+     reassessment_trigger:'After 15 A1b bridge-title submissions; compare response rate vs. direct OD Manager rate.',
+     linked_tasks:['A1b','A2']},
+    {id:'A16a', category:'Job Search', status:'hypothesis', evidence_quality:'weak',
+     claim:'Resume positions credibly in defense lane (A1a) without additional recruiter critique',
+     justification:'Lane-anchored header + Nellis/USAFWS/ISR keywords + clearance posture stated. Not yet tested at volume.',
+     fail_signal:'Zero responses after 20 A1a submissions. Or: auto-rejects clustering on a single role class → JD-keyword gaps in that class.',
+     reassessment_trigger:'After 20 A1a submissions.',
+     linked_tasks:['A1a','A2','A3']},
+    {id:'A16b', category:'Job Search', status:'weakening', evidence_quality:'weak',
+     claim:'Resume bridges credibly into OD bridge titles (Workforce Transformation, Change Mgmt, etc.)',
+     justification:'"Designed capability pathways, role progression, certification criteria, operating rhythms" is the reframe. Deloitte auto-reject suggests conventional OD-title history is still the filter. Bridge-title reframe not yet volume-tested.',
+     fail_signal:'Zero responses on 15 bridge-title submissions → vocabulary gap not bridged. Get buyer-side OD/human-capital critique.',
+     reassessment_trigger:'After 15 A1b bridge-title submissions.',
+     linked_tasks:['A1b','A2','A3'],
+     notes:'Deloitte auto-reject (2026-05-XX) = first data point on direct OD Manager title, not yet on bridge titles specifically.'},
+    {id:'A17', category:'Job Search', status:'holds', evidence_quality:'strong',
+     claim:'Runway holds long enough for conversion without forced compression',
+     justification:'Metrea final day 2026-06-12. Sep pkg ~$14K. Peak liquid mid-July ~$42K. Burn ~$3K/mo (+$400 Jul/Aug, +$2K Nov). VA ~$1K/mo possible not budgeted. Floor ~$12K not hit until mid-2027 even with zero income.',
+     fail_signal:'Verified liquid falls below $20K before DP1 fires.',
+     reassessment_trigger:'Monthly cash review. DP1.5 tripwire at ~$12K floor.',
+     linked_tasks:['A1a','A1b','A2','A3']},
+    {id:'A18', category:'Job Search', status:'hypothesis', evidence_quality:'weak',
+     claim:'70/30 portfolio outperforms direct OD-first approach for conversion speed and option value',
+     justification:'A1a has higher per-application conversion probability. A1b has higher long-arc value. Portfolio hedges A14-tech while not abandoning OD direction. Not yet tested.',
+     fail_signal:'A1a produces offer but zero A1b traction after 15 submissions → collapse to 100% defense. Or: A1b converts to screen before A1a → rebalance toward 50/50.',
+     reassessment_trigger:'DP2 Day-14, Day-30, Day-60 reviews (2026-06-03, 06-19, 07-19).',
+     linked_tasks:['A1a','A1b']},
+    // Asset Stack
+    {id:'A9', category:'Asset Stack', status:'hypothesis', evidence_quality:'weak',
+     claim:'Multi-surface content (YouTube + LinkedIn + newsletter) compounds to ICP inbound by M6–M12',
+     justification:'Consistent cadence + harvest filter applied to captures compounds to ICP DMs. Conditional on applied-insight quality via DDC capture, not generic-credential content.',
+     fail_signal:'Zero ICP-quality inbound after 6 months of sustained cadence → content is generic. Rebuild around real-work DDC captures.',
+     reassessment_trigger:'Month 3 early signal; Month 6 for Phase 0→1 gate decision.',
+     linked_tasks:['B2','B3','B4a']},
+    {id:'A19', category:'Asset Stack', status:'hypothesis', evidence_quality:'weak',
+     claim:'Operator-interview extraction methodology is the viable leading wedge (A19 candidate #3)',
+     justification:'Option 4 in C1 converges dissertation IP, product IP, and podcast mechanic (A21) on the same spine. Tightest convergence available. Not yet tested as a teachable methodology.',
+     fail_signal:'Draft IP artifact produces no recognition response from operators, OR chair signals Option 4 doesn\'t fit any UNC pathway.',
+     reassessment_trigger:'First B4b artifact draft; C1 chair conversation outcome.',
+     linked_tasks:['B4b','C1','C4']},
+    {id:'A20', category:'Asset Stack', status:'hypothesis', evidence_quality:'weak',
+     claim:'Asset 1 compounds before Asset 2 launches publicly and Asset 3 is built (sequencing holds)',
+     justification:'Publishing IP without audience = shouting into void. B4b and LLC deferred until compounding signal. Prevents premature productization of unvalidated methodology.',
+     fail_signal:'No compounding signal by Month 9 while dissertation nears defense window → accept sequencing break; publish dissertation IP as credentialing artifact regardless.',
+     reassessment_trigger:'Phase 0→1 gate review at Month 6.',
+     linked_tasks:['B1','B4b','C4']},
+    {id:'A21', category:'Asset Stack', status:'hypothesis', evidence_quality:'moderate',
+     claim:'Lessons-learned through-question is the podcast nucleus (operative mechanic resolving real problems)',
+     justification:'Retrospective evidence: top watch-time videos cluster on operator interviews structured around "what did you learn doing this." Forward-validation: next 5 interviews state frame explicitly in intros. Signal tracked vs. prior baseline.',
+     fail_signal:'No signal change (retention, DM quality, guest ease) after 5-interview experiment → revisit whether another mechanic carries the podcast.',
+     reassessment_trigger:'After 5-interview experiment. Month 6 cumulative review (~25 main episodes).',
+     linked_tasks:['B2','B3','B4a'],
+     notes:'v3.8 key fix: wordmark lock (prohibited) ≠ audience filter (encouraged) — two concepts conflated, generated random captures + harvest paralysis. Audience filter = substrate-validator in brand-ddc.md v0.2.'},
+    {id:'A22', category:'Asset Stack', status:'hypothesis', evidence_quality:'weak',
+     claim:'DDC capture practice surfaces transmissible content with ICP signal in 60 days',
+     justification:'Gary Vee DDC: capture moments from real work, tag lightly by domain + surface, harvest with audience filter (substrate-validator) + 7-criteria harvest filter before shipping. First 6 captures in brand-ddc.md v0.2.',
+     fail_signal:'No ICP-quality engagement on any domain × surface combo after 60 days → filter criteria need recalibration or surface is wrong for this ICP.',
+     reassessment_trigger:'60-day mark from first harvest (~2026-07-25). Monthly harvest tracker review.',
+     linked_tasks:['B2','B4a'],
+     notes:'v3.8 unblocks "what do I post" — execution begins week of 2026-05-25. Harvest filter prevents "I felt like it" drift and surface genericization.'},
+    {id:'A11', category:'Long Arc', status:'hypothesis', evidence_quality:'moderate',
+     claim:'B2B2C credentialing body or productized IP is the $1M/year path (years 10–15)',
+     justification:'Project-based consulting math doesn\'t pencil solo. Viable paths: owned credentialing body (Coughlin), productized IP + speaking/licensing, or retainer-anchored advisory at $20–30K/mo. Dissertation is the IP that makes any path defensible.',
+     fail_signal:'Phase 2 delivered and no credentialing partner interest + no retainer advisory traction → productized IP + speaking as fallback.',
+     reassessment_trigger:'Annual, at each plan-anniversary review.',
+     linked_tasks:['B4b','C4']},
+    // Dissertation
+    {id:'A15', category:'Dissertation', status:'in resolution', evidence_quality:'moderate',
+     claim:'Dissertation scope resolves within UNC\'s three DiP pathways (RCA / DT / PE) without compromising IP value',
+     justification:'UNC forces methodology: cause unknown → RCA; cause known + designing → DT; solution exists + evaluating → PE. Option 4 (operator-interview extraction as DT artifact) is tightest convergence with A19 + A21. Chair determines which option survives.',
+     fail_signal:'Chair signals none of the four scope-sequencing options fit any pathway → pivot to program-compliant topic with lower IP leverage, OR reconsider program fit.',
+     reassessment_trigger:'C1 chair conversation. Topic-lock by Year 2 mid-term.',
+     linked_tasks:['C1','C2']},
+    {id:'A7', category:'Dissertation', status:'holds', evidence_quality:'moderate',
+     claim:'Dissertation research population and consulting clients are non-overlapping under IRB firewall',
+     justification:'USAFWS instructor alumni (research population) and business clients/network contacts are structurally non-overlapping under Federal Common Rule 45 CFR 46. Dual-role conflict must be pre-registered with chair.',
+     fail_signal:'Chair raises subject/client overlap, OR UNC IRB flags dual-role conflict.',
+     reassessment_trigger:'C1 chair conversation first, then at IRB submission.',
+     linked_tasks:['C1','C2']},
   ],
-  "milestones": [
-    {"id":"DP1","name":"Decision Point 1 — Job offer received","month":5,"criteria":"Signed offer letter. Surface outside-practice/moonlighting policy before signing. Get it in writing. Workstream B shifts to 'build solo readiness inside the role.'"},
-    {"id":"DP2","name":"Decision Point 2 — Sustained no-offer signal","month":7,"criteria":"Triggered if A1 or A2 fail conditions hit after candidate-defined volume. Hard reassessment: compress requirements, activate solo-bootstrap branch, or bridge income."},
-    {"id":"MS1","name":"Month 3 checkpoint","month":3,"criteria":"≥15 applications submitted. First recruiter responses processed. LinkedIn at steady posting cadence. LLC formation initiated."},
-    {"id":"MS2","name":"Month 6 checkpoint","month":6,"criteria":"≥1 interview pipeline active at manager level or beyond. ≥5 informational interviews completed. LinkedIn: visible engagement from target-vertical contacts."},
-    {"id":"MS3","name":"Dissertation chair (M9–M11)","month":10,"criteria":"Chair conversation with positive signal on debrief phenomenology direction. Committee identified. Topic lock before Capstone Seminar 1 (M11)."},
-    {"id":"MS4","name":"T1 — Role landed in target market","month":7,"criteria":"Trigger T1 fires. Vocabulary, network density, and internal proof access begin accruing. Solo transition now governed by T1→T2→T3 sequence."},
-    {"id":"MS5","name":"IRB protocol submitted","month":15,"criteria":"IRB protocol drafted with subject/client firewall pre-registered. Methodology defended internally with chair. Target IRB approval by fall 2027."}
-  ]
+  milestones: [
+    {id:'DP2-14', name:'DP2 · Day-14 review',              month:1,  type:'dp2',
+     criteria:'2026-06-03 — Pattern: auto-rejects, screens, silence across both lanes. Adjust resumes + lane mix if a class is decisively failing. Source: application tracker.'},
+    {id:'DP2-30', name:'DP2 · Day-30 review',              month:2,  type:'dp2',
+     criteria:'2026-06-19 — Lane decision: is A1a producing traction? Is A1b viable near-term? Re-balance the 70/30 ratio on evidence.'},
+    {id:'MS-5i',  name:'A21 · 5-interview experiment done', month:3,  type:'ms',
+     criteria:'Track vs. prior baseline: retention curve shape, DM response volume + quality, guest acquisition ease, "this changed how I think" qualitative responses. Cheap fast test of A21.'},
+    {id:'MS-C1',  name:'C1 · Chair conversation',          month:2,  type:'ms',
+     criteria:'Chair met; scope-sequencing question on record; all four options presented; mutual next-step expectations set. Forcing function for C2–C6.'},
+    {id:'DP2-60', name:'DP2 · Day-60 review',              month:3,  type:'dp2',
+     criteria:'2026-07-19 — Precision decision: offer in hand, or compression options activate. Not a forced deadline given runway math — structured review point only.'},
+    {id:'MS-A22', name:'A22 · 60-day DDC harvest',         month:3,  type:'ms',
+     criteria:'~2026-07-25 — First harvest tracker review. Signal: ICP-quality engagement on ≥1 domain × surface. Audience filter + harvest filter applied to each candidate capture.'},
+    {id:'DP1',    name:'DP1 · Job offer received',         month:5,  type:'dp',
+     criteria:'Signed offer letter. Surface outside-practice/moonlighting policy before signing. Get it in writing. A1a lane → income protected, B shifts to "build solo readiness." A1b lane → A1a winds down, B4 IP artifacts accelerate.'},
+    {id:'DP1-5',  name:'DP1.5 · Cash tripwire (monitor)',  month:14, type:'dp-warn',
+     criteria:'Trigger if liquid falls below ~$12K (~4 months burn). Current math: does not fire until mid-2027. If fired: A1a becomes operational priority, B drops to maintenance, C at minimum enrollment. Unlikely to fire.'},
+  ],
 }
 
-const WS_MAP = Object.fromEntries(planData.workstreams.map(w => [w.id, w]))
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+const WS_MAP     = Object.fromEntries(planData.workstreams.map(w => [w.id, w]))
 const ASSUME_MAP = Object.fromEntries(planData.assumptions.map(a => [a.id, a]))
 
-const EQ_COLORS = {
-  strong:   '#1D9E75',
-  moderate: '#BA7517',
-  weak:     '#D85A30',
+const STATUS_META = {
+  'holds':        {color:'#1D9E75', label:'holds'},
+  'hypothesis':   {color:'#6a90b5', label:'hypothesis'},
+  'in resolution':{color:'#BA7517', label:'in resolution'},
+  'weakening':    {color:'#D85A30', label:'weakening'},
+  'falsified':    {color:'#D83050', label:'falsified'},
+  'in progress':  {color:'#1D9E75', label:'in progress'},
+  'not started':  {color:'#344a60', label:'not started'},
+  'deferred':     {color:'#4a4060', label:'deferred'},
+  'done':         {color:'#1D9E75', label:'done'},
 }
+const EQ_COLORS = {strong:'#1D9E75', moderate:'#BA7517', weak:'#D85A30'}
+function eqColor(q)  { return EQ_COLORS[q] || '#888' }
+function stColor(s)  { return STATUS_META[s]?.color || '#888' }
+function stLabel(s)  { return STATUS_META[s]?.label || s }
 
-function eqColor(q) { return EQ_COLORS[q] || '#888' }
-
+// ─── Tooltip ──────────────────────────────────────────────────────────────────
 function Tooltip({ text, x, y, visible }) {
   if (!visible) return null
   return (
-    <div
-      style={{
-        position: 'fixed',
-        left: x + 12,
-        top: y - 8,
-        zIndex: 1000,
-        background: '#0a1628',
-        border: '1px solid #1e3a5f',
-        borderRadius: 8,
-        padding: '8px 12px',
-        pointerEvents: 'none',
-        maxWidth: 260,
-        boxShadow: '0 4px 24px rgba(0,0,0,0.5)',
-      }}
-    >
-      <div style={{ color: '#fff', fontSize: 12, fontWeight: 600 }}>{text.name}</div>
-      <div style={{ color: '#6a80a0', fontSize: 11, marginTop: 2 }}>{text.ws}</div>
-      <div style={{ color: '#c5a028', fontSize: 11, marginTop: 2 }}>{text.range}</div>
+    <div style={{
+      position:'fixed', left:x+12, top:y-8, zIndex:1000,
+      background:'#0a1628', border:'1px solid #1e3a5f', borderRadius:8,
+      padding:'8px 12px', pointerEvents:'none', maxWidth:260,
+      boxShadow:'0 4px 24px rgba(0,0,0,0.5)',
+    }}>
+      <div style={{color:'#fff',fontSize:12,fontWeight:600}}>{text.name}</div>
+      <div style={{color:'#6a80a0',fontSize:11,marginTop:2}}>{text.ws}</div>
+      <div style={{color:'#c5a028',fontSize:11,marginTop:2}}>{text.range}</div>
+      <div style={{color:stColor(text.status),fontSize:11,marginTop:2}}>{stLabel(text.status)}</div>
       {text.assumCount > 0 && (
-        <div style={{ color: '#7a9ab5', fontSize: 11, marginTop: 2 }}>{text.assumCount} linked assumption{text.assumCount > 1 ? 's' : ''}</div>
+        <div style={{color:'#7a9ab5',fontSize:11,marginTop:2}}>
+          {text.assumCount} linked assumption{text.assumCount > 1 ? 's' : ''}
+        </div>
       )}
     </div>
   )
 }
 
+// ─── Phase Navigator ──────────────────────────────────────────────────────────
+function PhaseNavigator() {
+  const [expanded, setExpanded] = useState(0)
+
+  const PHASE_COLORS = {
+    0: {active:'#85B7EB', bg:'#112842'},
+    1: {active:'#5DCAA5', bg:'#0F2E25'},
+    2: {active:'#EF9F27', bg:'#2F2208'},
+    3: {active:'#B87FD4', bg:'#2A1542'},
+    4: {active:'#e05c28', bg:'#2F1408'},
+  }
+
+  return (
+    <div className="shrink-0 px-6 py-4 border-b border-[#1e3a5f]">
+      {/* Phase pills */}
+      <div className="flex gap-2 mb-3 flex-wrap">
+        {PHASES.map(p => {
+          const isExp = expanded === p.id
+          const c = PHASE_COLORS[p.id]
+          return (
+            <button
+              key={p.id}
+              onClick={() => setExpanded(prev => prev === p.id ? null : p.id)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
+              style={{
+                background: isExp ? c.bg : '#071020',
+                border: `1px solid ${isExp ? c.active : p.active ? c.active + '66' : '#1e3a5f'}`,
+                color: isExp ? c.active : p.active ? c.active + 'cc' : '#4a6080',
+              }}
+            >
+              {p.active && (
+                <span style={{
+                  width:6, height:6, borderRadius:'50%',
+                  background: c.active,
+                  boxShadow:`0 0 6px ${c.active}`,
+                  display:'inline-block',
+                }} />
+              )}
+              {p.label}
+              <span style={{color: isExp ? c.active + 'aa' : '#4a6080', fontWeight:400}}>
+                {p.name}
+              </span>
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Expanded phase detail */}
+      {expanded !== null && (() => {
+        const p = PHASES[expanded]
+        const c = PHASE_COLORS[expanded]
+        return (
+          <div className="rounded-xl border px-4 py-3" style={{background:c.bg, borderColor:c.active+'44'}}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{color:c.active}}>
+                  {p.active ? '● Active now' : 'Activates when gate fires'}
+                </p>
+                <ul className="flex flex-col gap-1">
+                  {p.what.map((item, i) => (
+                    <li key={i} className="flex gap-2 text-xs" style={{color:'#a0b8cc'}}>
+                      <span style={{color:c.active, marginTop:1, flexShrink:0}}>–</span>
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              {p.gate && (
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider mb-2 text-[#c5a028]">
+                    Gate to Phase {p.id + 1}
+                  </p>
+                  <p className="text-xs text-[#a0b8cc] leading-relaxed mb-2">{p.gate}</p>
+                  {p.gate_tests.length > 0 && (
+                    <div className="flex gap-1 flex-wrap">
+                      {p.gate_tests.map(t => (
+                        <span key={t} className="text-[10px] px-1.5 py-0.5 rounded bg-[#1e3a5f] text-[#7a9ab5]">{t}</span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+              {!p.gate && (
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{color:c.active}}>
+                    Terminal phase — no gate
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        )
+      })()}
+    </div>
+  )
+}
+
+// ─── Main component ───────────────────────────────────────────────────────────
 export default function Roadmap() {
-  const [selectedTask, setSelectedTask]       = useState(null)
+  const [selectedTask,    setSelectedTask]    = useState(null)
   const [selectedAssumId, setSelectedAssumId] = useState(null)
-  const [assumFilter, setAsumFilter]          = useState('all')
-  const [tooltip, setTooltip]                 = useState({ visible: false, x: 0, y: 0, text: {} })
-  const [expandedMilestone, setExpandedMilestone] = useState(null)
+  const [assumCat,        setAssumCat]        = useState('all')
+  const [tooltip,         setTooltip]         = useState({visible:false,x:0,y:0,text:{}})
+  const [expandedMs,      setExpandedMs]      = useState(null)
   const assumRefs = useRef({})
 
   const months = planData.meta.months
 
-  // Today line — position as % across the 15-month window
-  const planStart = new Date(2026, 4, 1)  // May 1 2026
-  const planEnd   = new Date(2027, 7, 1)  // Aug 1 2027 (end of month 15)
-  const todayPct  = Math.min(100, Math.max(0, (Date.now() - planStart) / (planEnd - planStart) * 100))
+  // Today line
+  const planStart    = new Date(2026, 4, 1)
+  const planEnd      = new Date(2027, 7, 1)
+  const todayPct     = Math.min(100, Math.max(0, (Date.now() - planStart) / (planEnd - planStart) * 100))
   const todayInRange = Date.now() >= planStart && Date.now() <= planEnd
+
+  const CATS = ['all', 'Job Search', 'Asset Stack', 'Dissertation', 'Long Arc']
 
   function isDimmed(task) {
     if (!selectedAssumId) return false
-    const linkedTasks = ASSUME_MAP[selectedAssumId]?.linked_tasks || []
-    return !linkedTasks.includes(task.id)
+    return !(ASSUME_MAP[selectedAssumId]?.linked_tasks || []).includes(task.id)
   }
 
   function handleBarClick(task) {
@@ -191,69 +451,69 @@ export default function Roadmap() {
     setSelectedAssumId(null)
   }
 
-  function handleAssumClick(assumId) {
-    setSelectedAssumId(prev => prev === assumId ? null : assumId)
+  function handleAssumClick(id) {
+    setSelectedAssumId(prev => prev === id ? null : id)
     setSelectedTask(null)
   }
 
-  function jumpToAssum(assumId) {
-    setSelectedAssumId(assumId)
+  function jumpToAssum(id) {
+    setSelectedAssumId(id)
     setSelectedTask(null)
     setTimeout(() => {
-      const el = assumRefs.current[assumId]
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+      assumRefs.current[id]?.scrollIntoView({behavior:'smooth', block:'nearest'})
     }, 50)
   }
 
-  const filteredAssumptions = planData.assumptions.filter(a => {
-    if (assumFilter === 'all') return true
-    return a.evidence_quality === assumFilter
-  })
+  function handleBarEnter(e, task) {
+    const ws = WS_MAP[task.ws]
+    const s  = months[task.start - 1]
+    const en = months[task.start + task.duration - 2]
+    setTooltip({
+      visible: true, x: e.clientX, y: e.clientY,
+      text: {
+        name: task.name, ws: ws?.name || task.ws, status: task.status,
+        range: `M${task.start}–M${task.start+task.duration-1} · ${s?.label} '${s?.year} – ${en?.label} '${en?.year}`,
+        assumCount: (task.linked_assumptions||[]).length,
+      },
+    })
+  }
+
+  function handleBarMove(e) { setTooltip(p => ({...p, x:e.clientX, y:e.clientY})) }
+  function handleBarLeave()  { setTooltip(p => ({...p, visible:false})) }
+
+  const filteredAssumptions = planData.assumptions.filter(a =>
+    assumCat === 'all' || a.category === assumCat
+  )
 
   const tasksByWs = {}
   planData.workstreams.forEach(ws => {
     tasksByWs[ws.id] = planData.tasks.filter(t => t.ws === ws.id)
   })
 
-  function handleBarMouseEnter(e, task) {
-    const ws = WS_MAP[task.ws]
-    const startMonth = months[task.start - 1]
-    const endMonth = months[task.start + task.duration - 2]
-    const assumCount = (task.linked_assumptions || []).length
-    setTooltip({
-      visible: true,
-      x: e.clientX,
-      y: e.clientY,
-      text: {
-        name: task.name,
-        ws: ws?.name || task.ws,
-        range: `M${task.start}–M${task.start + task.duration - 1} (${startMonth?.label} '${startMonth?.year} – ${endMonth?.label} '${endMonth?.year})`,
-        assumCount,
-      }
-    })
-  }
-
-  function handleBarMouseMove(e) {
-    setTooltip(prev => ({ ...prev, x: e.clientX, y: e.clientY }))
-  }
-
-  function handleBarMouseLeave() {
-    setTooltip(prev => ({ ...prev, visible: false }))
+  function TodayLine() {
+    if (!todayInRange) return null
+    return (
+      <div style={{
+        position:'absolute', top:0, bottom:0, width:2,
+        background:'#e05c28', left:`${todayPct}%`,
+        zIndex:4, opacity:0.85, pointerEvents:'none',
+      }} />
+    )
   }
 
   return (
     <div className="flex flex-col bg-[#0a1628] text-white overflow-y-auto h-full">
       <Tooltip {...tooltip} />
 
-      {/* Header strip */}
+      {/* Header */}
       <div className="shrink-0 px-6 pt-5 pb-4 border-b border-[#1e3a5f]">
-        <h2 className="text-base font-bold text-white mb-3">{planData.meta.title}</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <h2 className="text-sm font-bold text-white mb-3">{planData.meta.title}</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
           {[
-            { label: 'Window',   value: planData.meta.window },
-            { label: 'Capacity', value: planData.meta.capacity },
-            { label: 'Primary',  value: planData.meta.primary_icp },
-            { label: 'Target',   value: planData.meta.target },
+            {label:'Window',     value:planData.meta.window},
+            {label:'Constraint', value:planData.meta.constraint},
+            {label:'Runway',     value:planData.meta.runway},
+            {label:'Metrea',     value:planData.meta.metreaEnd},
           ].map(item => (
             <div key={item.label} className="bg-[#071020] border border-[#1e3a5f] rounded-lg px-3 py-2">
               <div className="text-[#4a6080] text-xs mb-0.5">{item.label}</div>
@@ -263,16 +523,20 @@ export default function Roadmap() {
         </div>
       </div>
 
-      {/* Gantt chart */}
+      {/* Phase navigator */}
+      <PhaseNavigator />
+
+      {/* Gantt */}
       <div className="shrink-0 px-6 pt-4 pb-2">
         <div className="overflow-x-auto">
-          <div style={{ minWidth: 900 + 224 }}>
+          <div style={{minWidth: 900 + 232}}>
 
             {/* Month header */}
-            <div className="flex" style={{ marginLeft: 224 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(15, 1fr)', width: '100%' }}>
+            <div className="flex" style={{marginLeft:232}}>
+              <div style={{display:'grid', gridTemplateColumns:'repeat(15,1fr)', width:'100%'}}>
                 {months.map(m => (
-                  <div key={m.n} className="text-center border-l border-[#1e3a5f] first:border-l-0" style={{ borderBottom: '1px solid #1e3a5f' }}>
+                  <div key={m.n} className="text-center border-l border-[#1e3a5f] first:border-l-0"
+                    style={{borderBottom:'1px solid #1e3a5f'}}>
                     <div className="text-[#c5a028] text-xs font-bold py-1">{m.label}</div>
                     <div className="text-[#4a6080] text-xs pb-1">'{m.year}</div>
                   </div>
@@ -285,26 +549,31 @@ export default function Roadmap() {
               const wsTasks = tasksByWs[ws.id] || []
               return (
                 <div key={ws.id}>
-                  <div className="flex items-center" style={{ borderTop: '1px solid #1e3a5f', background: '#071020' }}>
-                    <div style={{ width: 224, minWidth: 224 }} className="px-3 py-1.5">
-                      <span className="text-xs font-bold uppercase tracking-wider" style={{ color: ws.barColor }}>{ws.name}</span>
+                  {/* WS header */}
+                  <div className="flex items-center" style={{borderTop:'1px solid #1e3a5f', background:'#071020'}}>
+                    <div style={{width:232, minWidth:232}} className="px-3 py-1.5">
+                      <span className="text-xs font-bold uppercase tracking-wider" style={{color:ws.barColor}}>
+                        {ws.name}
+                      </span>
                     </div>
-                    <div style={{ flex: 1 }} />
+                    <div style={{flex:1}} />
                   </div>
 
+                  {/* Task rows */}
                   {wsTasks.map(task => {
                     const isSelected = selectedTask?.id === task.id
-                    const dimmed = isDimmed(task)
-                    const leftPct = ((task.start - 1) / 15 * 100)
-                    const widthPct = (task.duration / 15 * 100)
+                    const dimmed     = isDimmed(task)
+                    const leftPct    = (task.start - 1) / 15 * 100
+                    const widthPct   = task.duration / 15 * 100
                     const assumCount = (task.linked_assumptions || []).length
 
                     return (
-                      <div key={task.id} className="flex items-center" style={{ borderTop: '1px solid #112040', minHeight: 40 }}>
-                        <div style={{ width: 224, minWidth: 224 }} className="px-3 py-2 flex items-center gap-1.5">
+                      <div key={task.id} className="flex items-center"
+                        style={{borderTop:'1px solid #112040', minHeight:40}}>
+                        <div style={{width:232, minWidth:232}} className="px-3 py-2 flex items-center gap-1.5">
                           <span
                             className="text-xs leading-snug cursor-pointer"
-                            style={{ color: isSelected ? '#fff' : '#7a9ab5' }}
+                            style={{color: isSelected ? '#fff' : '#7a9ab5'}}
                             onClick={() => handleBarClick(task)}
                           >
                             {task.name}
@@ -314,58 +583,40 @@ export default function Roadmap() {
                           )}
                         </div>
 
-                        <div style={{ flex: 1, position: 'relative', height: 40 }}>
+                        <div style={{flex:1, position:'relative', height:40}}>
+                          {/* Grid lines */}
                           <div style={{
-                            position: 'absolute', inset: 0,
-                            display: 'grid',
-                            gridTemplateColumns: 'repeat(15, 1fr)',
+                            position:'absolute', inset:0,
+                            display:'grid', gridTemplateColumns:'repeat(15,1fr)',
                           }}>
                             {months.map(m => (
-                              <div key={m.n} style={{ borderLeft: m.n > 1 ? '1px solid #0f1f35' : 'none' }} />
+                              <div key={m.n} style={{borderLeft: m.n > 1 ? '1px solid #0f1f35' : 'none'}} />
                             ))}
                           </div>
 
-                          {todayInRange && (
-                            <div style={{
-                              position: 'absolute', top: 0, bottom: 0, width: 2,
-                              background: '#e05c28', left: `${todayPct}%`,
-                              zIndex: 4, opacity: 0.85, pointerEvents: 'none',
-                            }} />
-                          )}
+                          <TodayLine />
 
+                          {/* Bar */}
                           <div
                             style={{
-                              position: 'absolute',
-                              top: '50%',
-                              transform: 'translateY(-50%)',
-                              left: `${leftPct}%`,
-                              width: `${widthPct}%`,
-                              height: 26,
-                              background: ws.barBg,
-                              borderRadius: 6,
+                              position:'absolute', top:'50%', transform:'translateY(-50%)',
+                              left:`${leftPct}%`, width:`${widthPct}%`, height:26,
+                              background: ws.barBg, borderRadius:6,
                               border: isSelected ? `2px solid ${ws.barColor}` : `1px solid ${ws.barColor}33`,
-                              opacity: dimmed ? 0.25 : 1,
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              paddingLeft: 8,
-                              paddingRight: 4,
-                              overflow: 'hidden',
-                              transition: 'opacity 0.2s, border 0.15s',
+                              opacity: dimmed ? 0.2 : task.status === 'deferred' ? 0.5 : 1,
+                              cursor:'pointer', display:'flex', alignItems:'center',
+                              paddingLeft:8, paddingRight:4, overflow:'hidden',
+                              transition:'opacity 0.2s, border 0.15s',
                               boxShadow: isSelected ? `0 0 8px ${ws.barColor}55` : 'none',
                             }}
                             onClick={() => handleBarClick(task)}
-                            onMouseEnter={e => handleBarMouseEnter(e, task)}
-                            onMouseMove={handleBarMouseMove}
-                            onMouseLeave={handleBarMouseLeave}
+                            onMouseEnter={e => handleBarEnter(e, task)}
+                            onMouseMove={handleBarMove}
+                            onMouseLeave={handleBarLeave}
                           >
                             <span style={{
-                              color: ws.barColor,
-                              fontSize: 10,
-                              fontWeight: 600,
-                              whiteSpace: 'nowrap',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
+                              color: ws.barColor, fontSize:10, fontWeight:600,
+                              whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis',
                             }}>{task.label}</span>
                           </div>
                         </div>
@@ -377,47 +628,36 @@ export default function Roadmap() {
             })}
 
             {/* Milestones row */}
-            <div className="flex items-center" style={{ borderTop: '1px solid #1e3a5f', minHeight: 48 }}>
-              <div style={{ width: 224, minWidth: 224 }} className="px-3 py-2">
+            <div className="flex items-center" style={{borderTop:'1px solid #1e3a5f', minHeight:48}}>
+              <div style={{width:232, minWidth:232}} className="px-3 py-2">
                 <span className="text-xs font-bold uppercase tracking-wider text-[#c5a028]">Milestones</span>
               </div>
-              <div style={{ flex: 1, position: 'relative', height: 48 }}>
+              <div style={{flex:1, position:'relative', height:48}}>
                 <div style={{
-                  position: 'absolute', inset: 0,
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(15, 1fr)',
+                  position:'absolute', inset:0,
+                  display:'grid', gridTemplateColumns:'repeat(15,1fr)',
                 }}>
                   {months.map(m => (
-                    <div key={m.n} style={{ borderLeft: m.n > 1 ? '1px solid #0f1f35' : 'none' }} />
+                    <div key={m.n} style={{borderLeft: m.n > 1 ? '1px solid #0f1f35' : 'none'}} />
                   ))}
                 </div>
-
-                {todayInRange && (
-                  <div style={{
-                    position: 'absolute', top: 0, bottom: 0, width: 2,
-                    background: '#e05c28', left: `${todayPct}%`,
-                    zIndex: 4, opacity: 0.85, pointerEvents: 'none',
-                  }} />
-                )}
-
+                <TodayLine />
                 {planData.milestones.map(ms => {
-                  const leftPct = ((ms.month - 1) / 15 * 100) + (1 / 15 * 50)
+                  const leftPct   = ((ms.month - 1) / 15 * 100) + (1/15*50)
+                  const msColor   = ms.type === 'dp' ? '#e05c28'
+                                  : ms.type === 'dp2' ? '#BA7517'
+                                  : ms.type === 'dp-warn' ? '#4a6080'
+                                  : '#c5a028'
                   return (
                     <div
                       key={ms.id}
-                      title={ms.name}
                       style={{
-                        position: 'absolute',
-                        left: `${leftPct}%`,
-                        top: '50%',
-                        width: 12,
-                        height: 12,
-                        background: '#c5a028',
-                        transform: 'translate(-50%, -50%) rotate(45deg)',
-                        cursor: 'pointer',
-                        zIndex: 2,
+                        position:'absolute', left:`${leftPct}%`, top:'50%',
+                        width:11, height:11, background:msColor,
+                        transform:'translate(-50%,-50%) rotate(45deg)',
+                        cursor:'pointer', zIndex:2,
                       }}
-                      onClick={() => setExpandedMilestone(prev => prev === ms.id ? null : ms.id)}
+                      onClick={() => setExpandedMs(prev => prev === ms.id ? null : ms.id)}
                     />
                   )
                 })}
@@ -431,33 +671,34 @@ export default function Roadmap() {
       {/* Two-column panel */}
       <div className="px-6 py-4 grid grid-cols-1 md:grid-cols-2 gap-4">
 
+        {/* Task Detail */}
         <div className="flex flex-col gap-3">
           <h3 className="text-xs font-bold uppercase tracking-wider text-[#4a6080]">Task Detail</h3>
           {selectedTask ? (
             <TaskDetail task={selectedTask} onJumpToAssumption={jumpToAssum} />
           ) : (
-            <div className="flex-1 bg-[#071020] border border-[#1e3a5f] rounded-xl flex items-center justify-center py-12">
+            <div className="bg-[#071020] border border-[#1e3a5f] rounded-xl flex items-center justify-center py-12">
               <p className="text-[#344a60] text-sm text-center">Click a Gantt bar to see details</p>
             </div>
           )}
         </div>
 
+        {/* Assumptions Register */}
         <div className="flex flex-col gap-3">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-2">
             <h3 className="text-xs font-bold uppercase tracking-wider text-[#4a6080]">Assumptions Register</h3>
-            <div className="flex gap-1">
-              {['all','moderate','weak'].map(f => (
-                <button
-                  key={f}
-                  onClick={() => setAsumFilter(f)}
+            <div className="flex gap-1 flex-wrap">
+              {CATS.map(c => (
+                <button key={c}
+                  onClick={() => setAssumCat(c)}
                   className="px-2.5 py-1 rounded text-xs font-medium transition-colors"
                   style={{
-                    background: assumFilter === f ? '#1e3a5f' : 'transparent',
-                    color: assumFilter === f ? '#fff' : '#4a6080',
-                    border: `1px solid ${assumFilter === f ? '#2a5080' : '#1e3a5f'}`,
+                    background: assumCat === c ? '#1e3a5f' : 'transparent',
+                    color: assumCat === c ? '#fff' : '#4a6080',
+                    border: `1px solid ${assumCat === c ? '#2a5080' : '#1e3a5f'}`,
                   }}
                 >
-                  {f}
+                  {c}
                 </button>
               ))}
             </div>
@@ -476,37 +717,38 @@ export default function Roadmap() {
         </div>
       </div>
 
-      {/* Milestones list */}
-      <div className="shrink-0 px-6 pb-6">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-[#4a6080] mb-3">Milestones & Decision Points</h3>
+      {/* Milestones + Decision Points */}
+      <div className="shrink-0 px-6 pb-8">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-[#4a6080] mb-3">
+          Milestones &amp; Decision Points
+        </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
           {planData.milestones.map(ms => {
-            const isDP = ms.id.startsWith('DP')
-            const isExpanded = expandedMilestone === ms.id
+            const isDP  = ms.type?.startsWith('dp')
+            const msColor = ms.type === 'dp' ? '#e05c28'
+                          : ms.type === 'dp2' ? '#BA7517'
+                          : ms.type === 'dp-warn' ? '#4a6080'
+                          : '#c5a028'
+            const isExp = expandedMs === ms.id
             return (
-              <div
-                key={ms.id}
+              <div key={ms.id}
                 className="bg-[#071020] border rounded-lg px-4 py-3 cursor-pointer transition-colors"
-                style={{ borderColor: isExpanded ? '#c5a028' : isDP ? '#c5a02855' : '#1e3a5f' }}
-                onClick={() => setExpandedMilestone(prev => prev === ms.id ? null : ms.id)}
+                style={{borderColor: isExp ? msColor : isDP ? msColor+'55' : '#1e3a5f'}}
+                onClick={() => setExpandedMs(prev => prev === ms.id ? null : ms.id)}
               >
                 <div className="flex items-start gap-2">
                   <span style={{
-                    display: 'inline-block',
-                    width: 10,
-                    height: 10,
-                    background: '#c5a028',
-                    transform: 'rotate(45deg)',
-                    marginTop: 4,
-                    flexShrink: 0,
+                    display:'inline-block', width:10, height:10,
+                    background:msColor, transform:'rotate(45deg)',
+                    marginTop:4, flexShrink:0,
                   }} />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-[#c5a028] text-xs font-bold shrink-0">{ms.id}</span>
+                      <span className="text-xs font-bold shrink-0" style={{color:msColor}}>{ms.id}</span>
                       <span className="text-white text-xs font-medium truncate">{ms.name}</span>
                       <span className="text-[#4a6080] text-xs shrink-0 ml-auto">M{ms.month}</span>
                     </div>
-                    {isExpanded && (
+                    {isExp && (
                       <p className="text-[#6a80a0] text-xs mt-2 leading-relaxed">{ms.criteria}</p>
                     )}
                   </div>
@@ -520,41 +762,53 @@ export default function Roadmap() {
   )
 }
 
+// ─── Task Detail ──────────────────────────────────────────────────────────────
 function TaskDetail({ task, onJumpToAssumption }) {
-  const ws = WS_MAP[task.ws]
+  const ws     = WS_MAP[task.ws]
   const months = planData.meta.months
-  const startMonth = months[task.start - 1]
-  const endMonth = months[task.start + task.duration - 2]
-  const linkedAssumptions = (task.linked_assumptions || []).map(id => ASSUME_MAP[id]).filter(Boolean)
+  const s      = months[task.start - 1]
+  const e      = months[task.start + task.duration - 2]
+  const linked = (task.linked_assumptions || []).map(id => ASSUME_MAP[id]).filter(Boolean)
 
   return (
     <div className="bg-[#071020] border border-[#1e3a5f] rounded-xl px-4 py-4 flex flex-col gap-3">
       <div>
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-xs font-bold uppercase tracking-wider" style={{ color: ws?.barColor }}>{ws?.name}</span>
+        <div className="flex items-center gap-2 mb-1 flex-wrap">
+          <span className="text-xs font-bold uppercase tracking-wider" style={{color:ws?.barColor}}>
+            {ws?.name}
+          </span>
           <span className="text-[#4a6080] text-xs">·</span>
-          <span className="text-[#c5a028] text-xs font-medium">M{task.start}–M{task.start + task.duration - 1}</span>
+          <span className="text-[#c5a028] text-xs font-medium">M{task.start}–M{task.start+task.duration-1}</span>
+          <span
+            className="ml-auto text-xs font-medium px-1.5 py-0.5 rounded"
+            style={{color:stColor(task.status), background:stColor(task.status)+'22'}}
+          >
+            {stLabel(task.status)}
+          </span>
         </div>
         <p className="text-white text-sm font-semibold">{task.name}</p>
         <p className="text-[#6a80a0] text-xs mt-1">
-          {startMonth?.label} '{startMonth?.year} – {endMonth?.label} '{endMonth?.year} · {task.duration} month{task.duration !== 1 ? 's' : ''}
+          {s?.label} '{s?.year} – {e?.label} '{e?.year} · {task.duration} month{task.duration !== 1 ? 's' : ''}
         </p>
       </div>
 
-      {linkedAssumptions.length > 0 && (
+      {task.notes && (
+        <p className="text-[#5a7090] text-xs leading-relaxed border-t border-[#1e3a5f] pt-3">
+          {task.notes}
+        </p>
+      )}
+
+      {linked.length > 0 && (
         <div>
           <p className="text-[#4a6080] text-xs mb-2 font-medium uppercase tracking-wider">Linked Assumptions</p>
           <div className="flex flex-col gap-1.5">
-            {linkedAssumptions.map(a => (
-              <button
-                key={a.id}
+            {linked.map(a => (
+              <button key={a.id}
                 onClick={() => onJumpToAssumption(a.id)}
                 className="flex items-start gap-2 text-left hover:bg-[#0f2040] rounded-lg px-2 py-1.5 transition-colors"
               >
-                <span
-                  className="inline-block w-2 h-2 rounded-full shrink-0 mt-0.5"
-                  style={{ background: eqColor(a.evidence_quality) }}
-                />
+                <span className="inline-block w-2 h-2 rounded-full shrink-0 mt-0.5"
+                  style={{background:stColor(a.status)}} />
                 <div>
                   <span className="text-[#7a9ab5] text-xs font-bold">{a.id}</span>
                   <span className="text-[#6a80a0] text-xs ml-1">{a.claim}</span>
@@ -568,12 +822,11 @@ function TaskDetail({ task, onJumpToAssumption }) {
   )
 }
 
+// ─── Assumption Card ──────────────────────────────────────────────────────────
 const AssumptionCard = forwardRef(function AssumptionCard({ assumption, isSelected, onClick }, ref) {
   const a = assumption
   return (
-    <div
-      ref={ref}
-      onClick={onClick}
+    <div ref={ref} onClick={onClick}
       className="bg-[#071020] border rounded-xl px-4 py-3 cursor-pointer transition-all flex flex-col gap-2"
       style={{
         borderColor: isSelected ? '#c5a028' : '#1e3a5f',
@@ -581,22 +834,15 @@ const AssumptionCard = forwardRef(function AssumptionCard({ assumption, isSelect
       }}
     >
       <div className="flex items-start gap-2">
-        <span
-          className="inline-block w-2 h-2 rounded-full shrink-0 mt-1"
-          style={{ background: eqColor(a.evidence_quality) }}
-        />
+        <span className="inline-block w-2 h-2 rounded-full shrink-0 mt-1"
+          style={{background:stColor(a.status)}} />
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-0.5">
+          <div className="flex items-center gap-2 mb-0.5 flex-wrap">
             <span className="text-[#c5a028] text-xs font-bold">{a.id}</span>
             <span className="text-[#4a6080] text-xs">{a.category}</span>
-            <span
-              className="ml-auto text-xs font-medium px-1.5 py-0.5 rounded"
-              style={{
-                color: eqColor(a.evidence_quality),
-                background: eqColor(a.evidence_quality) + '22',
-              }}
-            >
-              {a.evidence_quality}
+            <span className="ml-auto text-xs font-medium px-1.5 py-0.5 rounded"
+              style={{color:stColor(a.status), background:stColor(a.status)+'22'}}>
+              {stLabel(a.status)}
             </span>
           </div>
           <p className="text-white text-xs font-medium leading-snug">{a.claim}</p>
@@ -617,6 +863,12 @@ const AssumptionCard = forwardRef(function AssumptionCard({ assumption, isSelect
             <div>
               <p className="text-[#4a6080] text-xs font-bold uppercase tracking-wider mb-1">Justification</p>
               <p className="text-[#5a7090] text-xs leading-relaxed">{a.justification}</p>
+            </div>
+          )}
+          {a.notes && (
+            <div>
+              <p className="text-[#4a6080] text-xs font-bold uppercase tracking-wider mb-1">Notes</p>
+              <p className="text-[#5a7090] text-xs leading-relaxed">{a.notes}</p>
             </div>
           )}
           {a.linked_tasks && a.linked_tasks.length > 0 && (
