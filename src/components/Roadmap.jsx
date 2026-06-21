@@ -5,7 +5,7 @@ const TOTAL_MONTHS = 37
 const planData = {
   meta: {
     title: "SOFt Skills — Brand Strategy v4",
-    window: "Aug 2025 – Aug 2028 (3 years)",
+tml window: "Aug 2025 – Aug 2028 (3 years)",
     apex: "Invest in your personal development and philosophy",
     arms: "EdD dissertation · Media (podcast + newsletter) · Business (parked until study lands)",
     firewall: "Market the question, not the answer — 11.5",
@@ -27,7 +27,6 @@ const planData = {
     {id:"biz",   name:"C · Business (parked)",  barColor:"#9B7FD4", barBg:"#1A1030"},
   ],
   tasks: [
-    // ── Dissertation ──────────────────────────────────────────────────────────────────────────
     {id:"D1",  name:"Y1 coursework — 858 Quant · 893 Leadership · 859 Qual · 905 Equitable Practice", ws:"diss", start:1,  duration:10, label:"Y1 courses"},
     {id:"D2",  name:"Y1 Summer — 956 Applied Quant · 834 Org Theory; seed Ch.1 PoP work",             ws:"diss", start:11, duration:3,  label:"Y1 summer"},
     {id:"D3",  name:"Draft critical-incident interview protocol",                                        ws:"diss", start:11, duration:4,  label:"interview protocol", linked_assumptions:["S2","S3"]},
@@ -43,13 +42,11 @@ const planData = {
     {id:"D13", name:"Y3 Spring — Advanced Leadership · Capstone II",                                    ws:"diss", start:30, duration:5,  label:"Y3 Spring"},
     {id:"D14", name:"Ch.4 — Findings, implications, recommendations",                                   ws:"diss", start:30, duration:8,  label:"Ch.4 findings"},
     {id:"D15", name:"Y3 Summer — Capstone III · Final Defense → Doctor",                               ws:"diss", start:35, duration:3,  label:"Cap.III · Defense"},
-    // ── Media ───────────────────────────────────────────────────────────────────────────────
     {id:"M1",  name:"Stand up show + newsletter + landing page",                                         ws:"media", start:11, duration:2,  label:"launch setup"},
     {id:"M2",  name:"Fortnightly podcast + matched newsletter cadence (§5.4)",                          ws:"media", start:13, duration:25, label:"fortnightly cadence", linked_assumptions:["S5","S6"]},
     {id:"M3",  name:"Email list — primary compounding asset (watch reply rate, not open rate)",         ws:"media", start:11, duration:27, label:"list growth", linked_assumptions:["S5","S6"]},
     {id:"M4",  name:"Clip, Short & Title Engine per episode — Eden MCP (§5.10)",                        ws:"media", start:13, duration:25, label:"clip + title engine", linked_assumptions:["S5"]},
     {id:"M5",  name:"Ramp to weekly cadence once editor in place (Y3 target)",                          ws:"media", start:25, duration:13, label:"→ weekly"},
-    // ── Business ──────────────────────────────────────────────────────────────────────────────
     {id:"B1",  name:"Gene Coughlin: chair-role write-up (owe him this — Jun 2026)",                     ws:"biz", start:11, duration:1,  label:"Gene write-up", linked_assumptions:["S8"]},
     {id:"B2",  name:"Gene: October event RSVP — decide by Aug 2026 (South Dakota)",                     ws:"biz", start:13, duration:1,  label:"Oct event?", linked_assumptions:["S8"]},
     {id:"B3",  name:"Patterns/problems log + light market scan (RBLP, AAR tools, pricing)",             ws:"biz", start:11, duration:27, label:"patterns log", linked_assumptions:["S7","S8"]},
@@ -57,8 +54,7 @@ const planData = {
   ],
   assumptions: [
     {
-      id:"S1",
-      category:"Dissertation",
+      id:"S1", category:"Dissertation",
       claim:"Faculty confirm Program Evaluation as the pathway (G1 gate)",
       evidence_quality:"moderate",
       plan_elements_affected:"Ch.3 design, topic-lock gate (~Mar 2027), all downstream chapters",
@@ -68,8 +64,7 @@ const planData = {
       linked_tasks:["D3","D4","D6","D8"],
     },
     {
-      id:"S2",
-      category:"Dissertation",
+      id:"S2", category:"Dissertation",
       claim:"Mechanism holds: required expert-to-novice teaching → leadership output (no opt-out)",
       evidence_quality:"moderate",
       plan_elements_affected:"PoP, RQ, construct — the entire study's spine",
@@ -79,8 +74,7 @@ const planData = {
       linked_tasks:["D3","D4","D11","D12"],
     },
     {
-      id:"S3",
-      category:"Dissertation",
+      id:"S3", category:"Dissertation",
       claim:"Critical-incident protocol yields specific data — not just general impressions",
       evidence_quality:"weak",
       plan_elements_affected:"Ch.3 protocol design; Ch.4 validity; scope of org-level claim",
@@ -90,8 +84,7 @@ const planData = {
       linked_tasks:["D3","D11","D12"],
     },
     {
-      id:"S4",
-      category:"Dissertation",
+      id:"S4", category:"Dissertation",
       claim:"Multi-source access holds: graduates + cadre + leadership + documents (G3 ✅ cleared)",
       evidence_quality:"strong",
       plan_elements_affected:"Org-level claim strength; triangulation; G4 data-sources gate",
@@ -101,8 +94,7 @@ const planData = {
       linked_tasks:["D9","D11"],
     },
     {
-      id:"S5",
-      category:"Media",
+      id:"S5", category:"Media",
       claim:"Fortnightly cadence maintainable at 8–12 hr/wk alongside full dissertation load",
       evidence_quality:"weak",
       plan_elements_affected:"All media milestones; list growth rate; demand test viability",
@@ -112,8 +104,7 @@ const planData = {
       linked_tasks:["M2","M3","M4"],
     },
     {
-      id:"S6",
-      category:"Media",
+      id:"S6", category:"Media",
       claim:"Email list reaches ~300–500 by mid-2027; ~750–1,500 by mid-2029",
       evidence_quality:"weak",
       plan_elements_affected:"Phase 1 foundation; demand test timing (2027); Phase 2 offer viability (post-study)",
@@ -123,8 +114,7 @@ const planData = {
       linked_tasks:["M2","M3"],
     },
     {
-      id:"S7",
-      category:"Business",
+      id:"S7", category:"Business",
       claim:"Business stays parked until study lands — firewall (11.5) holds throughout",
       evidence_quality:"strong",
       plan_elements_affected:"All business decisions; Gene partnership scope; cert lane (Phase 3)",
@@ -134,8 +124,7 @@ const planData = {
       linked_tasks:["B3","B4"],
     },
     {
-      id:"S8",
-      category:"Business",
+      id:"S8", category:"Business",
       claim:"Gene Coughlin's four roles (chair/sponsor/partner/incumbent) stay separable (§8.3)",
       evidence_quality:"weak",
       plan_elements_affected:"Research independence; brand neutrality; any formal agreement",
@@ -207,8 +196,8 @@ export default function Roadmap() {
     return !linked.includes(task.id)
   }
 
-  function handleBarClick(task)         { setSelectedTask(task); setSelectedAssumId(null) }
-  function handleAssumClick(assumId)    { setSelectedAssumId(prev => prev === assumId ? null : assumId); setSelectedTask(null) }
+  function handleBarClick(task)      { setSelectedTask(task); setSelectedAssumId(null) }
+  function handleAssumClick(assumId) { setSelectedAssumId(prev => prev === assumId ? null : assumId); setSelectedTask(null) }
 
   function jumpToAssum(assumId) {
     setSelectedAssumId(assumId); setSelectedTask(null)
@@ -246,7 +235,6 @@ export default function Roadmap() {
     <div className="flex flex-col h-full min-h-0 bg-[#0a1628] text-white overflow-auto">
       <Tooltip {...tooltip} />
 
-      {/* Header */}
       <div className="shrink-0 px-6 pt-5 pb-4 border-b border-[#1e3a5f]">
         <h2 className="text-base font-bold text-white mb-3">{planData.meta.title}</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -264,12 +252,10 @@ export default function Roadmap() {
         </div>
       </div>
 
-      {/* Gantt */}
       <div className="shrink-0 px-6 pt-4 pb-2">
         <div className="overflow-x-auto">
           <div style={{minWidth: minW}}>
 
-            {/* Month header */}
             <div className="flex" style={{marginLeft:224}}>
               <div style={{display:'grid', gridTemplateColumns:gridCols, width:'100%'}}>
                 {months.map(m => (
@@ -282,31 +268,25 @@ export default function Roadmap() {
               </div>
             </div>
 
-            {/* Workstream rows */}
             {planData.workstreams.map(ws => {
               const wsTasks = tasksByWs[ws.id] || []
               return (
                 <div key={ws.id}>
-                  {/* WS label */}
                   <div className="flex items-center" style={{borderTop:'1px solid #1e3a5f', background:'#071020'}}>
                     <div style={{width:224, minWidth:224}} className="px-3 py-1.5">
                       <span className="text-xs font-bold uppercase tracking-wider" style={{color:ws.barColor}}>{ws.name}</span>
                     </div>
                     <div style={{flex:1}} />
                   </div>
-
-                  {/* Task rows */}
                   {wsTasks.map(task => {
                     const isSelected = selectedTask?.id === task.id
                     const dimmed     = isDimmed(task)
                     const leftPct    = (task.start - 1) / TOTAL_MONTHS * 100
                     const widthPct   = task.duration / TOTAL_MONTHS * 100
                     const assumCount = (task.linked_assumptions || []).length
-
                     return (
                       <div key={task.id} className="flex items-center"
                            style={{borderTop:'1px solid #112040', minHeight:40}}>
-                        {/* Name column */}
                         <div style={{width:224, minWidth:224}} className="px-3 py-2 flex items-center gap-1.5">
                           <span className="text-xs leading-snug cursor-pointer"
                                 style={{color: isSelected ? '#fff' : '#7a9ab5'}}
@@ -317,33 +297,26 @@ export default function Roadmap() {
                             <span className="text-[10px] text-[#c5a028] shrink-0">({assumCount})</span>
                           )}
                         </div>
-
-                        {/* Timeline */}
                         <div style={{flex:1, position:'relative', height:40}}>
-                          {/* Grid lines */}
                           <div style={{position:'absolute',inset:0,display:'grid',gridTemplateColumns:gridCols}}>
                             {months.map(m => (
                               <div key={m.n} style={{borderLeft: m.n > 1 ? '1px solid #0f1f35' : 'none'}} />
                             ))}
                           </div>
-                          {/* Today line */}
                           <div style={{
                             position:'absolute', left:`${todayPct}%`,
                             top:0, bottom:0, width:1,
                             background:'rgba(255,255,255,0.12)', zIndex:3, pointerEvents:'none',
                           }} />
-                          {/* Bar */}
                           <div
                             style={{
                               position:'absolute', top:'50%', transform:'translateY(-50%)',
                               left:`${leftPct}%`, width:`${widthPct}%`,
                               height:26, background:ws.barBg, borderRadius:6,
                               border: isSelected ? `2px solid ${ws.barColor}` : `1px solid ${ws.barColor}33`,
-                              opacity: dimmed ? 0.22 : 1,
-                              cursor:'pointer',
+                              opacity: dimmed ? 0.22 : 1, cursor:'pointer',
                               display:'flex', alignItems:'center', paddingLeft:8, paddingRight:4,
-                              overflow:'hidden',
-                              transition:'opacity 0.2s, border 0.15s',
+                              overflow:'hidden', transition:'opacity 0.2s, border 0.15s',
                               boxShadow: isSelected ? `0 0 8px ${ws.barColor}55` : 'none',
                             }}
                             onClick={() => handleBarClick(task)}
@@ -364,7 +337,6 @@ export default function Roadmap() {
               )
             })}
 
-            {/* Milestones row */}
             <div className="flex items-center" style={{borderTop:'1px solid #1e3a5f', minHeight:48}}>
               <div style={{width:224, minWidth:224}} className="px-3 py-2">
                 <span className="text-xs font-bold uppercase tracking-wider text-[#c5a028]">Gates &amp; Milestones</span>
@@ -375,7 +347,6 @@ export default function Roadmap() {
                     <div key={m.n} style={{borderLeft: m.n > 1 ? '1px solid #0f1f35' : 'none'}} />
                   ))}
                 </div>
-                {/* Today line in milestone row */}
                 <div style={{
                   position:'absolute', left:`${todayPct}%`,
                   top:0, bottom:0, width:1,
@@ -383,7 +354,7 @@ export default function Roadmap() {
                 }} />
                 {planData.milestones.map(ms => {
                   const leftPct = ((ms.month - 1) / TOTAL_MONTHS * 100) + (1 / TOTAL_MONTHS * 50)
-                  const isGate  = ms.id.startsWith('🚩') || ['TL','CX','PD','FD'].includes(ms.id)
+                  const isGate  = ['TL','CX','PD','FD'].includes(ms.id)
                   return (
                     <div key={ms.id} title={ms.name}
                          style={{
@@ -403,7 +374,6 @@ export default function Roadmap() {
           </div>
         </div>
 
-        {/* Legend */}
         <div className="flex items-center gap-4 mt-2 px-1">
           <div className="flex items-center gap-1.5">
             <div style={{width:12,height:1,background:'rgba(255,255,255,0.25)'}} />
@@ -420,10 +390,7 @@ export default function Roadmap() {
         </div>
       </div>
 
-      {/* Two-column panel */}
       <div className="flex-1 min-h-0 px-6 py-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-
-        {/* Left: Task detail */}
         <div className="flex flex-col gap-3">
           <h3 className="text-xs font-bold uppercase tracking-wider text-[#4a6080]">Task Detail</h3>
           {selectedTask ? (
@@ -434,8 +401,6 @@ export default function Roadmap() {
             </div>
           )}
         </div>
-
-        {/* Right: Assumptions register */}
         <div className="flex flex-col gap-3 min-h-0">
           <div className="flex items-center justify-between">
             <h3 className="text-xs font-bold uppercase tracking-wider text-[#4a6080]">Assumptions Register</h3>
@@ -464,12 +429,11 @@ export default function Roadmap() {
         </div>
       </div>
 
-      {/* Milestones list */}
       <div className="shrink-0 px-6 pb-6">
         <h3 className="text-xs font-bold uppercase tracking-wider text-[#4a6080] mb-3">Gates &amp; Milestones</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
           {planData.milestones.map(ms => {
-            const isGate    = ['TL','CX','PD','FD'].includes(ms.id)
+            const isGate     = ['TL','CX','PD','FD'].includes(ms.id)
             const isExpanded = expandedMilestone === ms.id
             return (
               <div key={ms.id}
@@ -508,7 +472,6 @@ function TaskDetail({ task, onJumpToAssumption }) {
   const startM       = months[task.start - 1]
   const endM         = months[Math.min(task.start + task.duration - 2, TOTAL_MONTHS - 1)]
   const linkedAssums = (task.linked_assumptions || []).map(id => ASSUME_MAP[id]).filter(Boolean)
-
   return (
     <div className="bg-[#071020] border border-[#1e3a5f] rounded-xl px-4 py-4 flex flex-col gap-3">
       <div>
