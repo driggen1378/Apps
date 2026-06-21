@@ -5,7 +5,7 @@ const TOTAL_MONTHS = 37
 const planData = {
   meta: {
     title: "SOFt Skills — Brand Strategy v4",
-tml window: "Aug 2025 – Aug 2028 (3 years)",
+    window: "Aug 2025 – Aug 2028 (3 years)",
     apex: "Invest in your personal development and philosophy",
     arms: "EdD dissertation · Media (podcast + newsletter) · Business (parked until study lands)",
     firewall: "Market the question, not the answer — 11.5",
