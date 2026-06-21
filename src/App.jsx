@@ -11,14 +11,16 @@ import QuickNoteScreen from './screens/QuickNoteScreen'
 import BankScreen from './screens/BankScreen'
 import DissertationScreen from './screens/DissertationScreen'
 import ContactsScreen from './screens/ContactsScreen'
+import CommandCenterScreen from './screens/CommandCenterScreen'
 import { storage } from './lib/storage'
 
 const NAV = [
-  { id: 'quick-note',   label: 'Quick Note',     icon: '⚡' },
-  { id: 'bank',         label: 'Bank',           icon: '🗂️' },
+  { id: 'home',         label: 'Home',           icon: '🏠' },
   { id: 'weekly',       label: 'Weekly',         icon: '📅' },
   { id: 'dissertation', label: 'Dissertation',   icon: '🎓' },
   { id: 'contacts',     label: 'Contacts',       icon: '🤝' },
+  { id: 'quick-note',   label: 'Quick Note',     icon: '⚡' },
+  { id: 'bank',         label: 'Bank',           icon: '🗂️' },
   { id: 'ideas',        label: 'Ideas',          icon: '💡' },
   { id: 'newsletter',   label: 'Newsletter',     icon: '✉️' },
   { id: 'create',       label: 'Create',         icon: '✍️' },
@@ -48,7 +50,7 @@ function SidebarNav({ section, onNavigate, onClose }) {
           </button>
         )}
       </div>
-      <nav className="flex-1 px-3 py-4 space-y-1">
+      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
         {NAV.map(n => (
           <button
             key={n.id}
@@ -73,7 +75,7 @@ export default function App() {
 }
 
 function AppInner() {
-  const [section, setSection] = useState('weekly')
+  const [section, setSection] = useState('home')
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   function navigate(id) {
@@ -87,24 +89,21 @@ function AppInner() {
   }
 
   return (
-    // fixed inset-0 fills the exact visible viewport on iOS — avoids the 100vh URL-bar bug
     <div className="fixed inset-0 flex bg-[#0a1628] text-white">
 
-      {/* Desktop sidebar — always in flow, hidden on mobile */}
+      {/* Desktop sidebar */}
       <aside className="hidden md:block shrink-0">
         <SidebarNav section={section} onNavigate={navigate} />
       </aside>
 
-      {/* Mobile sidebar drawer — mounted on top when open */}
+      {/* Mobile sidebar drawer */}
       {sidebarOpen && (
         <div className="md:hidden fixed inset-0 z-50 flex">
           <SidebarNav section={section} onNavigate={navigate} onClose={() => setSidebarOpen(false)} />
-          {/* Tap-outside backdrop */}
           <div className="flex-1 bg-black/50" onClick={() => setSidebarOpen(false)} />
         </div>
       )}
 
-      {/* Main content area */}
       <main className="flex-1 min-w-0 flex flex-col overflow-hidden">
 
         {/* Mobile top bar */}
@@ -132,11 +131,12 @@ function AppInner() {
 
         {/* Section content */}
         <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
-          {section === 'quick-note'   && <QuickNoteScreen />}
-          {section === 'bank'         && <BankScreen />}
+          {section === 'home'         && <CommandCenterScreen onNavigate={navigate} />}
           {section === 'weekly'       && <WeeklyScreen onNavigate={navigate} />}
           {section === 'dissertation' && <DissertationScreen />}
           {section === 'contacts'     && <ContactsScreen />}
+          {section === 'quick-note'   && <QuickNoteScreen />}
+          {section === 'bank'         && <BankScreen />}
           {section === 'ideas'        && <Ideas onDraftFromIdea={handleDraftFromIdea} />}
           {section === 'newsletter'   && <NewsletterScreen />}
           {section === 'create'       && <Create onNavigate={navigate} />}
