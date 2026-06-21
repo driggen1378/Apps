@@ -9,18 +9,22 @@ import WeeklyScreen from './screens/WeeklyScreen'
 import NewsletterScreen from './screens/NewsletterScreen'
 import QuickNoteScreen from './screens/QuickNoteScreen'
 import BankScreen from './screens/BankScreen'
+import DissertationScreen from './screens/DissertationScreen'
+import ContactsScreen from './screens/ContactsScreen'
 import { storage } from './lib/storage'
 
 const NAV = [
-  { id: 'quick-note', label: 'Quick Note',     icon: '⚡' },
-  { id: 'bank',       label: 'Bank',           icon: '🗂️' },
-  { id: 'weekly',     label: 'Weekly',         icon: '📅' },
-  { id: 'ideas',      label: 'Ideas',          icon: '💡' },
-  { id: 'newsletter', label: 'Newsletter',     icon: '✉️' },
-  { id: 'create',     label: 'Create',         icon: '✍️' },
-  { id: 'drafts',     label: 'Drafts',         icon: '📝' },
-  { id: 'roadmap',    label: 'Launch Plan',    icon: '📊' },
-  { id: 'settings',   label: 'Brand Settings', icon: '⚙️' },
+  { id: 'quick-note',   label: 'Quick Note',     icon: '⚡' },
+  { id: 'bank',         label: 'Bank',           icon: '🗂️' },
+  { id: 'weekly',       label: 'Weekly',         icon: '📅' },
+  { id: 'dissertation', label: 'Dissertation',   icon: '🎓' },
+  { id: 'contacts',     label: 'Contacts',       icon: '🤝' },
+  { id: 'ideas',        label: 'Ideas',          icon: '💡' },
+  { id: 'newsletter',   label: 'Newsletter',     icon: '✉️' },
+  { id: 'create',       label: 'Create',         icon: '✍️' },
+  { id: 'drafts',       label: 'Drafts',         icon: '📝' },
+  { id: 'roadmap',      label: 'Launch Plan',    icon: '📊' },
+  { id: 'settings',     label: 'Brand Settings', icon: '⚙️' },
 ]
 
 function SidebarNav({ section, onNavigate, onClose }) {
@@ -128,15 +132,17 @@ function AppInner() {
 
         {/* Section content */}
         <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
-          {section === 'quick-note' && <QuickNoteScreen />}
-          {section === 'bank'       && <BankScreen />}
-          {section === 'weekly'     && <WeeklyScreen onNavigate={navigate} />}
-          {section === 'ideas'      && <Ideas onDraftFromIdea={handleDraftFromIdea} />}
-          {section === 'newsletter' && <NewsletterScreen />}
-          {section === 'create'     && <Create onNavigate={navigate} />}
-          {section === 'drafts'     && <DraftsScreen />}
-          {section === 'roadmap'    && <Roadmap />}
-          {section === 'settings'   && <BrandSettings />}
+          {section === 'quick-note'   && <QuickNoteScreen />}
+          {section === 'bank'         && <BankScreen />}
+          {section === 'weekly'       && <WeeklyScreen onNavigate={navigate} />}
+          {section === 'dissertation' && <DissertationScreen />}
+          {section === 'contacts'     && <ContactsScreen />}
+          {section === 'ideas'        && <Ideas onDraftFromIdea={handleDraftFromIdea} />}
+          {section === 'newsletter'   && <NewsletterScreen />}
+          {section === 'create'       && <Create onNavigate={navigate} />}
+          {section === 'drafts'       && <DraftsScreen />}
+          {section === 'roadmap'      && <Roadmap />}
+          {section === 'settings'     && <BrandSettings />}
         </div>
 
       </main>
