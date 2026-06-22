@@ -12,11 +12,15 @@ import BankScreen from './screens/BankScreen'
 import DissertationScreen from './screens/DissertationScreen'
 import ContactsScreen from './screens/ContactsScreen'
 import CommandCenterScreen from './screens/CommandCenterScreen'
+import TasksScreen from './screens/TasksScreen'
+import WorkflowsScreen from './screens/WorkflowsScreen'
 import { storage } from './lib/storage'
 
 const NAV = [
   { id: 'home',         label: 'Home',           icon: '🏠' },
+  { id: 'next',         label: 'Next Up',        icon: '🎯' },
   { id: 'weekly',       label: 'Weekly',         icon: '📅' },
+  { id: 'workflows',    label: 'Workflows',      icon: '🧭' },
   { id: 'dissertation', label: 'Dissertation',   icon: '🎓' },
   { id: 'contacts',     label: 'Contacts',       icon: '🤝' },
   { id: 'quick-note',   label: 'Quick Note',     icon: '⚡' },
@@ -76,10 +80,12 @@ export default function App() {
 
 function AppInner() {
   const [section, setSection] = useState('home')
+  const [navArg, setNavArg] = useState(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
-  function navigate(id) {
+  function navigate(id, arg = null) {
     setSection(id)
+    setNavArg(arg)
     setSidebarOpen(false)
   }
 
@@ -132,6 +138,8 @@ function AppInner() {
         {/* Section content */}
         <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
           {section === 'home'         && <CommandCenterScreen onNavigate={navigate} />}
+          {section === 'next'         && <TasksScreen onNavigate={navigate} />}
+          {section === 'workflows'    && <WorkflowsScreen openId={navArg} onNavigate={navigate} />}
           {section === 'weekly'       && <WeeklyScreen onNavigate={navigate} />}
           {section === 'dissertation' && <DissertationScreen />}
           {section === 'contacts'     && <ContactsScreen />}
