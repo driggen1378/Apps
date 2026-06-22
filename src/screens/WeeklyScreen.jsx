@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { storage } from '../lib/storage'
+import { loadTasks, saveTasks, getWorkflow } from '../lib/tasks'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -36,6 +37,7 @@ const DAYS_A = [
     sub: 'Dissertation + IP',
     timeEst: '3–4 hr',
     icon: '🎓',
+    workflow: 'diss-protocol',
     tasks: [
       { text: 'One dissertation move toward next open checklist item', nav: 'dissertation' },
       { text: 'IP development — build the framework or argument behind this cycle\'s premise', nav: 'ideas' },
@@ -47,6 +49,7 @@ const DAYS_A = [
     sub: 'Week A — flagship',
     timeEst: '2–3 hr',
     icon: '🎙️',
+    workflow: 'record',
     tasks: [
       { text: 'Pick this cycle\'s one core question or premise — log it in Ideas', nav: 'ideas' },
       { text: 'Prep the guest: read their material, write a one-page brief + 8–10 custom questions', nav: 'create' },
@@ -58,6 +61,7 @@ const DAYS_A = [
     sub: 'Post-record + short-form',
     timeEst: '1–2 hr',
     icon: '📥',
+    workflow: 'capture',
     tasks: [
       { text: '10–15 min capture: notes on what struck you as useful or new from the conversation', nav: 'bank' },
       { text: 'Ship 2–3 short-form posts (drive each to email list)' },
@@ -69,6 +73,7 @@ const DAYS_A = [
     sub: 'Network + review',
     timeEst: '1–2 hr',
     icon: '🤝',
+    workflow: 'connect',
     tasks: [
       { text: '3–5 relationship actions: comment, DM, or voice note to a contact', nav: 'contacts' },
       { text: 'Pitch as guest on one adjacent show' },
@@ -84,6 +89,7 @@ const DAYS_B = [
     sub: 'Dissertation + IP',
     timeEst: '3–4 hr',
     icon: '🎓',
+    workflow: 'diss-protocol',
     tasks: [
       { text: 'One dissertation move toward next open checklist item', nav: 'dissertation' },
       { text: 'IP development — refine the argument from this cycle\'s recording', nav: 'ideas' },
@@ -95,6 +101,7 @@ const DAYS_B = [
     sub: 'Week B — newsletter',
     timeEst: '2–3 hr',
     icon: '✍️',
+    workflow: 'write',
     tasks: [
       { text: 'Write newsletter from transcript + capture notes (800–1,500 words)', nav: 'create' },
       { text: 'Publish on fixed day — no exceptions; drive to email list' },
@@ -106,6 +113,7 @@ const DAYS_B = [
     sub: 'Clip engine + distribute',
     timeEst: '2 hr',
     icon: '✂️',
+    workflow: 'slice',
     tasks: [
       { text: 'Run Clip, Short & Title Engine: cut 1–2 long clips (2–19 min)', nav: 'create' },
       { text: 'Cut 3–4+ shorts (<60 s) — surface more candidates than you\'ll use', nav: 'create' },
@@ -117,6 +125,7 @@ const DAYS_B = [
     sub: 'Network + review',
     timeEst: '1–2 hr',
     icon: '🤝',
+    workflow: 'connect',
     tasks: [
       { text: '3–5 relationship actions: comment, DM, or voice note to a contact', nav: 'contacts' },
       { text: 'Pitch as guest on one adjacent show' },
@@ -221,6 +230,21 @@ export default function WeeklyScreen({ onNavigate }) {
     setProgress({})
   }
 
+  // Tasks pulled in from Next Up (inWeek && !done)
+  const [tasks, setTasks] = useState(loadTasks)
+  const injected = tasks.filter(t => t.inWeek && !t.done)
+
+  function completeInjected(id) {
+    const next = tasks.map(t => t.id === id ? { ...t, done: true } : t)
+    setTasks(next)
+    saveTasks(next)
+  }
+  function removeFromWeek(id) {
+    const next = tasks.map(t => t.id === id ? { ...t, inWeek: false } : t)
+    setTasks(next)
+    saveTasks(next)
+  }
+
   const days = cycle === 'A' ? DAYS_A : DAYS_B
   const totalTasks = days.reduce((s, d) => s + d.tasks.length, 0)
   const doneTasks = days.reduce((s, d, di) => s + d.tasks.filter((_, ti) => progress[`d${di}t${ti}`]).length, 0)
@@ -294,9 +318,19 @@ export default function WeeklyScreen({ onNavigate }) {
                       {day.name}
                     </p>
                     <p className="text-[11px] text-[#4a6080] mt-0.5">{day.sub}</p>
-                    <span className="inline-block mt-1.5 text-[10px] text-slate-600 bg-[#0a1628] border border-[#1e3a5f] px-2 py-0.5 rounded-full font-mono">
-                      {day.timeEst}
-                    </span>
+                    <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                      <span className="inline-block text-[10px] text-slate-600 bg-[#0a1628] border border-[#1e3a5f] px-2 py-0.5 rounded-full font-mono">
+                        {day.timeEst}
+                      </span>
+                      {day.workflow && (
+                        <button
+                          onClick={() => onNavigate('workflows', day.workflow)}
+                          className="text-[10px] text-[#5DCAA5]/70 hover:text-[#5DCAA5] transition-colors"
+                        >
+                          workflow →
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   {/* Tasks */}
@@ -341,6 +375,49 @@ export default function WeeklyScreen({ onNavigate }) {
             })}
           </div>
         </div>
+
+        {/* Added this week — pulled from Next Up */}
+        {injected.length > 0 && (
+          <div className="mt-5 border border-[#5DCAA5]/30 rounded-xl bg-[#0d1829] overflow-hidden">
+            <div className="px-4 py-2.5 border-b border-[#5DCAA5]/20 bg-[#5DCAA5]/8 flex items-center gap-2">
+              <span className="text-[#5DCAA5] text-xs font-bold uppercase tracking-wider">Added this week</span>
+              <span className="text-[10px] text-[#4a6080]">from Next Up</span>
+            </div>
+            <div className="px-3 py-3 flex flex-col gap-2.5">
+              {injected.map(t => {
+                const wf = t.workflow ? getWorkflow(t.workflow) : null
+                return (
+                  <div key={t.id} className="flex items-start gap-2.5">
+                    <button
+                      onClick={() => completeInjected(t.id)}
+                      className="mt-0.5 w-4 h-4 rounded border border-[#2a4070] hover:border-[#5DCAA5] flex items-center justify-center shrink-0 transition-all"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-slate-300 leading-relaxed">{t.text}</p>
+                      <div className="flex flex-wrap items-center gap-2 mt-1">
+                        {wf && (
+                          <button
+                            onClick={() => onNavigate('workflows', t.workflow)}
+                            className="inline-flex items-center gap-1 text-[11px] text-[#5DCAA5]/70 hover:text-[#5DCAA5] transition-colors"
+                          >
+                            <span>{wf.icon}</span>
+                            <span>{wf.title} →</span>
+                          </button>
+                        )}
+                        <button
+                          onClick={() => removeFromWeek(t.id)}
+                          className="text-[10px] text-[#3a5070] hover:text-[#7a9ab5] transition-colors"
+                        >
+                          remove
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Cycle legend */}
         <div className="mt-4 flex flex-wrap gap-3">

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { storage } from '../lib/storage'
+import { loadTasks } from '../lib/tasks'
 
 function load(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d } catch { return d } }
 function save(k, v) { localStorage.setItem(k, JSON.stringify(v)) }
@@ -168,7 +169,7 @@ function GoalsList({ cat, goals, onToggle, onNavigate }) {
 
 // ── Area card ───────────────────────────────────────────────────────────────────
 
-function AreaCard({ title, icon, color, meta, nav, onNavigate, onDblClick }) {
+function AreaCard({ title, icon, color, meta, nav, nextUp, onNavigate, onDblClick }) {
   return (
     <div
       onClick={() => nav && onNavigate(nav)}
@@ -195,11 +196,16 @@ function AreaCard({ title, icon, color, meta, nav, onNavigate, onDblClick }) {
           </div>
         ))}
       </div>
-      {nav && (
-        <div className="text-[10px] text-[#1e3a5f] group-hover:text-[#3a5070] transition-colors">
-          click → &nbsp;double-click → goals
-        </div>
-      )}
+      {/* Next up */}
+      <div
+        className="flex items-start gap-1.5 pt-2 border-t border-[#112040]"
+        onClick={e => { e.stopPropagation(); onNavigate('next') }}
+      >
+        <span className="text-[10px] font-bold uppercase tracking-wider shrink-0 mt-px" style={{ color }}>Next</span>
+        <span className="text-[11px] text-slate-400 leading-snug line-clamp-2 hover:text-white transition-colors">
+          {nextUp || 'All clear ✓'}
+        </span>
+      </div>
     </div>
   )
 }
@@ -268,6 +274,11 @@ export default function CommandCenterScreen({ onNavigate }) {
   const weekProgress = storage.getWeekProgress()[weekKey] || {}
   const weekDone     = Object.values(weekProgress).filter(Boolean).length
 
+  // Next Up — top pending task per category
+  const tasks = loadTasks()
+  const pendingByCat = c => tasks.filter(t => t.cat === c && !t.done)
+  const nextUp = c => pendingByCat(c)[0]?.text || null
+
   const gatesDone   = dissGates.filter(g => g.status === 'done').length
   const openActions = dissActions.filter(a => !a.done).length
   const mediaGoalsDone = goals.media.filter(g => g.done).length
@@ -283,6 +294,7 @@ export default function CommandCenterScreen({ onNavigate }) {
       icon: '🎯',
       color: '#c5a028',
       nav: 'dissertation',
+      nextUp: nextUp('dissertation'),
       meta: [
         { label: 'Research gates',   value: `${gatesDone}/${dissGates.length}`,    color: gatesDone === dissGates.length ? '#1D9E75' : '#EF9F27' },
         { label: 'Open actions',     value: `${openActions} open`,                  color: openActions > 0 ? '#D85A30' : '#1D9E75' },
@@ -294,6 +306,7 @@ export default function CommandCenterScreen({ onNavigate }) {
       icon: '🎙️',
       color: '#5DCAA5',
       nav: 'weekly',
+      nextUp: nextUp('media'),
       meta: [
         { label: 'This week',        value: `Week ${weekCycle} · ${weekCycle === 'A' ? 'Record' : 'Write & Slice'}`, color: '#5DCAA5' },
         { label: 'Daily tasks done', value: `${weekDone} checked` },
@@ -305,6 +318,7 @@ export default function CommandCenterScreen({ onNavigate }) {
       icon: '💼',
       color: '#9B7FD4',
       nav: 'contacts',
+      nextUp: nextUp('business'),
       meta: [
         { label: 'Status',           value: 'Pre-launch',          color: '#9B7FD4' },
         { label: 'Firewall',         value: 'Active — DiP first',  color: '#D85A30' },
@@ -316,6 +330,7 @@ export default function CommandCenterScreen({ onNavigate }) {
       icon: '⚡',
       color: '#85B7EB',
       nav: null,
+      nextUp: nextUp('gym'),
       meta: [
         {
           label: 'Gym this week',
